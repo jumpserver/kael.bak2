@@ -46,7 +46,7 @@
 			});
 		}
 
-		const updatedUser = await updateUserProfile(localStorage.token, name, profileImageUrl).catch(
+		const updatedUser = await updateUserProfile().catch(
 			(error) => {
 				toast.error(`${error}`);
 			}
@@ -54,7 +54,7 @@
 
 		if (updatedUser) {
 			// Get Session User Info
-			const sessionUser = await getSessionUser(localStorage.token).catch((error) => {
+			const sessionUser = await getSessionUser().catch((error) => {
 				toast.error(`${error}`);
 				return null;
 			});

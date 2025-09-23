@@ -73,7 +73,7 @@ from open_webui.retrieval.utils import (
 from open_webui.utils.misc import (
     calculate_sha256_string,
 )
-from open_webui.utils.auth import get_admin_user, get_verified_user
+from open_webui.utils.auth import get_verified_user
 
 from open_webui.config import (
     ENV,
@@ -194,7 +194,7 @@ async def get_status(request: Request):
 
 
 @router.get("/embedding")
-async def get_embedding_config(request: Request, user=Depends(get_admin_user)):
+async def get_embedding_config(request: Request, user=Depends(get_verified_user)):
     return {
         "status": True,
         "embedding_engine": request.app.state.config.RAG_EMBEDDING_ENGINE,
@@ -212,7 +212,7 @@ async def get_embedding_config(request: Request, user=Depends(get_admin_user)):
 
 
 @router.get("/reranking")
-async def get_reraanking_config(request: Request, user=Depends(get_admin_user)):
+async def get_reraanking_config(request: Request, user=Depends(get_verified_user)):
     return {
         "status": True,
         "reranking_model": request.app.state.config.RAG_RERANKING_MODEL,
@@ -239,7 +239,7 @@ class EmbeddingModelUpdateForm(BaseModel):
 
 @router.post("/embedding/update")
 async def update_embedding_config(
-    request: Request, form_data: EmbeddingModelUpdateForm, user=Depends(get_admin_user)
+    request: Request, form_data: EmbeddingModelUpdateForm, user=Depends(get_verified_user)
 ):
     log.info(
         f"Updating embedding model: {request.app.state.config.RAG_EMBEDDING_MODEL} to {form_data.embedding_model}"
@@ -319,7 +319,7 @@ class RerankingModelUpdateForm(BaseModel):
 
 @router.post("/reranking/update")
 async def update_reranking_config(
-    request: Request, form_data: RerankingModelUpdateForm, user=Depends(get_admin_user)
+    request: Request, form_data: RerankingModelUpdateForm, user=Depends(get_verified_user)
 ):
     log.info(
         f"Updating reranking model: {request.app.state.config.RAG_RERANKING_MODEL} to {form_data.reranking_model}"
@@ -349,7 +349,7 @@ async def update_reranking_config(
 
 
 @router.get("/config")
-async def get_rag_config(request: Request, user=Depends(get_admin_user)):
+async def get_rag_config(request: Request, user=Depends(get_verified_user)):
     return {
         "status": True,
         # RAG settings
@@ -508,7 +508,7 @@ class ConfigForm(BaseModel):
 
 @router.post("/config/update")
 async def update_rag_config(
-    request: Request, form_data: ConfigForm, user=Depends(get_admin_user)
+    request: Request, form_data: ConfigForm, user=Depends(get_verified_user)
 ):
     # RAG settings
     request.app.state.config.RAG_TEMPLATE = (
@@ -1669,7 +1669,7 @@ class DeleteForm(BaseModel):
 
 
 @router.post("/delete")
-def delete_entries_from_collection(form_data: DeleteForm, user=Depends(get_admin_user)):
+def delete_entries_from_collection(form_data: DeleteForm, user=Depends(get_verified_user)):
     try:
         if VECTOR_DB_CLIENT.has_collection(collection_name=form_data.collection_name):
             file = Files.get_file_by_id(form_data.file_id)
@@ -1688,13 +1688,13 @@ def delete_entries_from_collection(form_data: DeleteForm, user=Depends(get_admin
 
 
 @router.post("/reset/db")
-def reset_vector_db(user=Depends(get_admin_user)):
+def reset_vector_db(user=Depends(get_verified_user)):
     VECTOR_DB_CLIENT.reset()
     Knowledges.delete_all_knowledge()
 
 
 @router.post("/reset/uploads")
-def reset_upload_dir(user=Depends(get_admin_user)) -> bool:
+def reset_upload_dir(user=Depends(get_verified_user)) -> bool:
     folder = f"{UPLOAD_DIR}"
     try:
         # Check if the directory exists

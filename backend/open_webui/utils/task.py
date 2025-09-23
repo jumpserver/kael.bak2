@@ -198,7 +198,7 @@ def title_generation_template(
     template = prompt_template(
         template,
         **(
-            {"user_name": user.get("name"), "user_location": user.get("location")}
+            {"user_name": user.get("name"), "user_location": user.get("location", "zh")}
             if user
             else {}
         ),

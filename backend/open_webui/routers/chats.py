@@ -17,7 +17,7 @@ from open_webui.env import SRC_LOG_LEVELS
 from fastapi import APIRouter, Depends, HTTPException, Request, status, Header
 from pydantic import BaseModel
 
-from open_webui.utils.auth import get_admin_user, get_verified_user
+from open_webui.utils.auth import get_verified_user
 from open_webui.utils.access_control import has_permission
 
 log = logging.getLogger(__name__)
@@ -54,14 +54,6 @@ async def get_session_user_chat_list(
 
 @router.delete("/", response_model=bool)
 async def delete_all_user_chats(request: Request, user=Depends(get_verified_user)):
-    if user.role == "user" and not has_permission(
-            user.id, "chat.delete", request.app.state.config.USER_PERMISSIONS
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
-        )
-
     result = Chats.delete_chats_by_user_id(user.id)
     return result
 
@@ -74,7 +66,7 @@ async def delete_all_user_chats(request: Request, user=Depends(get_verified_user
 @router.get("/list/user/{user_id}", response_model=list[ChatTitleIdResponse])
 async def get_user_chat_list_by_user_id(
         user_id: str,
-        user=Depends(get_admin_user),
+        user=Depends(get_verified_user),
         skip: int = 0,
         limit: int = 50,
 ):
@@ -271,16 +263,10 @@ async def archive_all_chats(user=Depends(get_verified_user)):
 
 @router.get("/share/{share_id}", response_model=Optional[ChatResponse])
 async def get_shared_chat_by_id(share_id: str, user=Depends(get_verified_user)):
-    if user.role == "pending":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_MESSAGES.NOT_FOUND
-        )
-
-    if user.role == "admin":
-        chat = Chats.get_chat_by_id(share_id)
+    chat = Chats.get_chat_by_id(share_id)
 
     if chat:
-        return ChatResponse(**chat.model_dump())
+        return ChatResponse(**chat)
 
     else:
         raise HTTPException(
@@ -373,12 +359,6 @@ async def update_chat_message_by_id(
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
 
-    if chat['user_id'] != user.id and user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
-        )
-
     chat = Chats.upsert_message_to_chat_by_id_and_message_id(
         id,
         message_id,
@@ -431,12 +411,6 @@ async def send_chat_message_event_by_id(
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
 
-    if chat['user_id'] != user.id and user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
-        )
-
     event_emitter = get_event_emitter(
         {
             "user_id": user.id,
@@ -462,31 +436,14 @@ async def send_chat_message_event_by_id(
 
 @router.delete("/{_id}", response_model=bool)
 async def delete_chat_by_id(request: Request, _id: str, user=Depends(get_verified_user)):
-    if user.role == "admin":
-        chat = Chats.get_chat_by_id(_id)
-        for tag in chat.meta.get("tags", []):
-            if Chats.count_chats_by_tag_name_and_user_id(tag, user.id) == 1:
-                Tags.delete_tag_by_name_and_user_id(tag, user.id)
+    chat = Chats.get_chat_by_id(_id)
+    for tag in chat.meta.get("tags", []):
+        if Chats.count_chats_by_tag_name_and_user_id(tag, user.id) == 1:
+            Tags.delete_tag_by_name_and_user_id(tag, user.id)
 
-        result = Chats.delete_chat_by_id(_id)
+    result = Chats.delete_chat_by_id(_id)
 
-        return result
-    else:
-        if not has_permission(
-                user.id, "chat.delete", request.app.state.config.USER_PERMISSIONS
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
-            )
-
-        chat = Chats.get_chat_by_id(_id)
-        for tag in chat.meta.get("tags", []):
-            if Chats.count_chats_by_tag_name_and_user_id(tag, user.id) == 1:
-                Tags.delete_tag_by_name_and_user_id(tag, user.id)
-
-        result = Chats.delete_chat_by_id_and_user_id(_id, user.id)
-        return result
+    return result
 
 
 ############################
@@ -565,10 +522,7 @@ async def clone_shared_chat_by_id(
         _id: str,
         sid: str = Header(...),
         user=Depends(get_verified_user)):
-    if user.role == "admin":
-        chat = Chats.get_chat_by_id(_id)
-    else:
-        chat = Chats.get_chat_by_share_id(_id)
+    chat = Chats.get_chat_by_id(_id)
 
     if chat:
         updated_chat = {

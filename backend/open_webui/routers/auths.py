@@ -33,7 +33,7 @@ from open_webui.utils.misc import validate_email_format
 from open_webui.utils.auth import (
     create_api_key,
     create_token,
-    get_admin_user,
+    get_verified_user,
     get_verified_user,
     get_current_user,
     get_password_hash,
@@ -64,40 +64,16 @@ class SessionUserResponse(Token, UserResponse):
     permissions: Optional[dict] = None
 
 
-@router.get("/", response_model=SessionUserResponse)
+@router.get("/")
 async def get_session_user(
-    request: Request, response: Response, user=Depends(get_current_user)
+    request: Request, user=Depends(get_current_user)
 ):
-
-    token = create_token(
-        data={"id": user.id},
-        expires_delta=None,
-    )
-
-    # Set the cookie token
-    response.set_cookie(
-        key="token",
-        value=token,
-        expires=None,
-        httponly=True,  # Ensures the cookie is not accessible via JavaScript
-        samesite=WEBUI_AUTH_COOKIE_SAME_SITE,
-        secure=WEBUI_AUTH_COOKIE_SECURE,
-    )
-
-    user_permissions = get_permissions(
-        user.id, request.app.state.config.USER_PERMISSIONS
-    )
-
     return {
-        "token": token,
-        "token_type": "Bearer",
         "expires_at": None,
         "id": user.id,
-        "email": user.email,
         "name": user.name,
         "role": 'admin',
-        "profile_image_url": user.profile_image_url,
-        "permissions": user_permissions,
+        "permissions": request.app.state.config.USER_PERMISSIONS,
     }
 
 
@@ -108,15 +84,11 @@ async def get_session_user(
 
 @router.post("/update/profile", response_model=UserResponse)
 async def update_profile(
-    form_data: UpdateProfileForm, session_user=Depends(get_verified_user)
+    session_user=Depends(get_verified_user)
 ):
     if session_user:
-        user = Users.update_user_by_id(
-            session_user.id,
-            {"profile_image_url": form_data.profile_image_url, "name": form_data.name},
-        )
-        if user:
-            return user
+        if session_user:
+            return session_user
         else:
             raise HTTPException(400, detail=ERROR_MESSAGES.DEFAULT())
     else:
@@ -294,9 +266,9 @@ async def ldap_auth(request: Request, response: Response, form_data: LdapForm):
                     "token": token,
                     "token_type": "Bearer",
                     "id": user.id,
-                    "email": user.email,
+                    "username": user.username,
                     "name": user.name,
-                    "role": user.role,
+                    "role": 'admin',
                     "profile_image_url": user.profile_image_url,
                     "permissions": user_permissions,
                 }
@@ -379,11 +351,10 @@ async def signin(request: Request, response: Response, form_data: SigninForm):
         return {
             "token": token,
             "token_type": "Bearer",
-            "expires_at": expires_at,
             "id": user.id,
-            "email": user.email,
+            "username": user.username,
             "name": user.name,
-            "role": user.role,
+            "role": 'admin',
             "profile_image_url": user.profile_image_url,
             "permissions": user_permissions,
         }
@@ -396,106 +367,16 @@ async def signin(request: Request, response: Response, form_data: SigninForm):
 ############################
 
 
-@router.post("/signup", response_model=SessionUserResponse)
-async def signup(request: Request, response: Response, form_data: SignupForm):
-
-    if WEBUI_AUTH:
-        if (
-            not request.app.state.config.ENABLE_SIGNUP
-            or not request.app.state.config.ENABLE_LOGIN_FORM
-        ):
-            raise HTTPException(
-                status.HTTP_403_FORBIDDEN, detail=ERROR_MESSAGES.ACCESS_PROHIBITED
-            )
-    else:
-        if Users.get_num_users() != 0:
-            raise HTTPException(
-                status.HTTP_403_FORBIDDEN, detail=ERROR_MESSAGES.ACCESS_PROHIBITED
-            )
-
-    user_count = Users.get_num_users()
-    if not validate_email_format(form_data.email.lower()):
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST, detail=ERROR_MESSAGES.INVALID_EMAIL_FORMAT
-        )
-
-    if Users.get_user_by_email(form_data.email.lower()):
-        raise HTTPException(400, detail=ERROR_MESSAGES.EMAIL_TAKEN)
-
-    try:
-        role = (
-            "admin" if user_count == 0 else request.app.state.config.DEFAULT_USER_ROLE
-        )
-
-        if user_count == 0:
-            # Disable signup after the first user is created
-            request.app.state.config.ENABLE_SIGNUP = False
-
-        # The password passed to bcrypt must be 72 bytes or fewer. If it is longer, it will be truncated before hashing.
-        if len(form_data.password.encode("utf-8")) > 72:
-            raise HTTPException(
-                status.HTTP_400_BAD_REQUEST,
-                detail=ERROR_MESSAGES.PASSWORD_TOO_LONG,
-            )
-
-        hashed = get_password_hash(form_data.password)
-        user = Auths.insert_new_auth(
-            form_data.email.lower(),
-            hashed,
-            form_data.name,
-            form_data.profile_image_url,
-            role,
-        )
-
-        if user:
-
-            token = create_token(
-                data={"id": user.id},
-                expires_delta=None,
-            )
-
-            # Set the cookie token
-            response.set_cookie(
-                key="token",
-                value=token,
-                expires=None,
-                httponly=True,  # Ensures the cookie is not accessible via JavaScript
-                samesite=WEBUI_AUTH_COOKIE_SAME_SITE,
-                secure=WEBUI_AUTH_COOKIE_SECURE,
-            )
-
-            if request.app.state.config.WEBHOOK_URL:
-                post_webhook(
-                    request.app.state.WEBUI_NAME,
-                    request.app.state.config.WEBHOOK_URL,
-                    WEBHOOK_MESSAGES.USER_SIGNUP(user.name),
-                    {
-                        "action": "signup",
-                        "message": WEBHOOK_MESSAGES.USER_SIGNUP(user.name),
-                        "user": user.model_dump_json(exclude_none=True),
-                    },
-                )
-
-            user_permissions = get_permissions(
-                user.id, request.app.state.config.USER_PERMISSIONS
-            )
-
-            return {
-                "token": token,
-                "token_type": "Bearer",
-                "expires_at": expires_at,
-                "id": user.id,
-                "email": user.email,
-                "name": user.name,
-                "role": user.role,
-                "profile_image_url": user.profile_image_url,
-                "permissions": user_permissions,
-            }
-        else:
-            raise HTTPException(500, detail=ERROR_MESSAGES.CREATE_USER_ERROR)
-    except Exception as err:
-        log.error(f"Signup error: {str(err)}")
-        raise HTTPException(500, detail="An internal error occurred during signup.")
+@router.get("/signup")
+async def signup(user=Depends(get_verified_user)):
+    return {
+        "id": user.id,
+        "name": user.name,
+        "username": user.username,
+        "role": 'admin',
+        "is_valid": user.is_valid,
+        "is_active": user.is_active,
+    }
 
 
 @router.get("/signout")
@@ -511,7 +392,7 @@ async def signout(request: Request, response: Response):
 
 
 @router.post("/add", response_model=SigninResponse)
-async def add_user(form_data: AddUserForm, user=Depends(get_admin_user)):
+async def add_user(form_data: AddUserForm, user=Depends(get_verified_user)):
     if not validate_email_format(form_data.email.lower()):
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, detail=ERROR_MESSAGES.INVALID_EMAIL_FORMAT
@@ -536,9 +417,9 @@ async def add_user(form_data: AddUserForm, user=Depends(get_admin_user)):
                 "token": token,
                 "token_type": "Bearer",
                 "id": user.id,
-                "email": user.email,
+                "username": user.username,
                 "name": user.name,
-                "role": user.role,
+                "role": 'admin',
                 "profile_image_url": user.profile_image_url,
             }
         else:
@@ -587,7 +468,7 @@ async def get_admin_details(request: Request, user=Depends(get_current_user)):
 
 
 @router.get("/admin/config")
-async def get_admin_config(request: Request, user=Depends(get_admin_user)):
+async def get_admin_config(request: Request, user=Depends(get_verified_user)):
     return {
         "SHOW_ADMIN_DETAILS": request.app.state.config.SHOW_ADMIN_DETAILS,
         "WEBUI_URL": request.app.state.config.WEBUI_URL,
@@ -619,7 +500,7 @@ class AdminConfig(BaseModel):
 
 @router.post("/admin/config")
 async def update_admin_config(
-    request: Request, form_data: AdminConfig, user=Depends(get_admin_user)
+    request: Request, form_data: AdminConfig, user=Depends(get_verified_user)
 ):
     request.app.state.config.SHOW_ADMIN_DETAILS = form_data.SHOW_ADMIN_DETAILS
     request.app.state.config.WEBUI_URL = form_data.WEBUI_URL
@@ -678,7 +559,7 @@ class LdapServerConfig(BaseModel):
 
 
 @router.get("/admin/config/ldap/server", response_model=LdapServerConfig)
-async def get_ldap_server(request: Request, user=Depends(get_admin_user)):
+async def get_ldap_server(request: Request, user=Depends(get_verified_user)):
     return {
         "label": request.app.state.config.LDAP_SERVER_LABEL,
         "host": request.app.state.config.LDAP_SERVER_HOST,
@@ -697,7 +578,7 @@ async def get_ldap_server(request: Request, user=Depends(get_admin_user)):
 
 @router.post("/admin/config/ldap/server")
 async def update_ldap_server(
-    request: Request, form_data: LdapServerConfig, user=Depends(get_admin_user)
+    request: Request, form_data: LdapServerConfig, user=Depends(get_verified_user)
 ):
     required_fields = [
         "label",
@@ -745,7 +626,7 @@ async def update_ldap_server(
 
 
 @router.get("/admin/config/ldap")
-async def get_ldap_config(request: Request, user=Depends(get_admin_user)):
+async def get_ldap_config(request: Request, user=Depends(get_verified_user)):
     return {"ENABLE_LDAP": request.app.state.config.ENABLE_LDAP}
 
 
@@ -755,7 +636,7 @@ class LdapConfigForm(BaseModel):
 
 @router.post("/admin/config/ldap")
 async def update_ldap_config(
-    request: Request, form_data: LdapConfigForm, user=Depends(get_admin_user)
+    request: Request, form_data: LdapConfigForm, user=Depends(get_verified_user)
 ):
     request.app.state.config.ENABLE_LDAP = form_data.enable_ldap
     return {"ENABLE_LDAP": request.app.state.config.ENABLE_LDAP}

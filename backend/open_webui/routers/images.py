@@ -13,7 +13,7 @@ from open_webui.config import CACHE_DIR
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import SRC_LOG_LEVELS
 from open_webui.routers.files import upload_file
-from open_webui.utils.auth import get_admin_user, get_verified_user
+from open_webui.utils.auth import get_verified_user
 from open_webui.utils.images.comfyui import (
     ComfyUIGenerateImageForm,
     ComfyUIWorkflow,
@@ -32,7 +32,7 @@ router = APIRouter()
 
 
 @router.get("/config")
-async def get_config(request: Request, user=Depends(get_admin_user)):
+async def get_config(request: Request, user=Depends(get_verified_user)):
     return {
         "enabled": request.app.state.config.ENABLE_IMAGE_GENERATION,
         "engine": request.app.state.config.IMAGE_GENERATION_ENGINE,
@@ -98,7 +98,7 @@ class ConfigForm(BaseModel):
 
 @router.post("/config/update")
 async def update_config(
-    request: Request, form_data: ConfigForm, user=Depends(get_admin_user)
+    request: Request, form_data: ConfigForm, user=Depends(get_verified_user)
 ):
     request.app.state.config.IMAGE_GENERATION_ENGINE = form_data.engine
     request.app.state.config.ENABLE_IMAGE_GENERATION = form_data.enabled
@@ -191,7 +191,7 @@ def get_automatic1111_api_auth(request: Request):
 
 
 @router.get("/config/url/verify")
-async def verify_url(request: Request, user=Depends(get_admin_user)):
+async def verify_url(request: Request, user=Depends(get_verified_user)):
     if request.app.state.config.IMAGE_GENERATION_ENGINE == "automatic1111":
         try:
             r = requests.get(
@@ -287,7 +287,7 @@ class ImageConfigForm(BaseModel):
 
 
 @router.get("/image/config")
-async def get_image_config(request: Request, user=Depends(get_admin_user)):
+async def get_image_config(request: Request, user=Depends(get_verified_user)):
     return {
         "MODEL": request.app.state.config.IMAGE_GENERATION_MODEL,
         "IMAGE_SIZE": request.app.state.config.IMAGE_SIZE,
@@ -297,7 +297,7 @@ async def get_image_config(request: Request, user=Depends(get_admin_user)):
 
 @router.post("/image/config/update")
 async def update_image_config(
-    request: Request, form_data: ImageConfigForm, user=Depends(get_admin_user)
+    request: Request, form_data: ImageConfigForm, user=Depends(get_verified_user)
 ):
     set_image_model(request, form_data.MODEL)
 

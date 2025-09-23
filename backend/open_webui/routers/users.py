@@ -19,7 +19,7 @@ from open_webui.env import SRC_LOG_LEVELS
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 
-from open_webui.utils.auth import get_admin_user, get_password_hash, get_verified_user
+from open_webui.utils.auth import get_verified_user, get_password_hash, get_verified_user
 from open_webui.utils.access_control import get_permissions
 
 
@@ -37,7 +37,7 @@ router = APIRouter()
 async def get_users(
     skip: Optional[int] = None,
     limit: Optional[int] = None,
-    user=Depends(get_admin_user),
+    user=Depends(get_verified_user),
 ):
     return Users.get_users(skip, limit)
 
@@ -111,7 +111,7 @@ class UserPermissions(BaseModel):
 
 
 @router.get("/default/permissions", response_model=UserPermissions)
-async def get_default_user_permissions(request: Request, user=Depends(get_admin_user)):
+async def get_default_user_permissions(request: Request, user=Depends(get_verified_user)):
     return {
         "workspace": WorkspacePermissions(
             **request.app.state.config.USER_PERMISSIONS.get("workspace", {})
@@ -130,7 +130,7 @@ async def get_default_user_permissions(request: Request, user=Depends(get_admin_
 
 @router.post("/default/permissions")
 async def update_default_user_permissions(
-    request: Request, form_data: UserPermissions, user=Depends(get_admin_user)
+    request: Request, form_data: UserPermissions, user=Depends(get_verified_user)
 ):
     request.app.state.config.USER_PERMISSIONS = form_data.model_dump()
     return request.app.state.config.USER_PERMISSIONS
@@ -142,7 +142,7 @@ async def update_default_user_permissions(
 
 
 @router.post("/update/role", response_model=Optional[UserModel])
-async def update_user_role(form_data: UserRoleUpdateForm, user=Depends(get_admin_user)):
+async def update_user_role(form_data: UserRoleUpdateForm, user=Depends(get_verified_user)):
     if user.id != form_data.id and form_data.id != Users.get_first_user().id:
         return Users.update_user_role_by_id(form_data.id, form_data.role)
 
@@ -286,19 +286,11 @@ async def get_user_by_id(user_id: str, user=Depends(get_verified_user)):
 async def update_user_by_id(
     user_id: str,
     form_data: UserUpdateForm,
-    session_user=Depends(get_admin_user),
+    session_user=Depends(get_verified_user),
 ):
     user = Users.get_user_by_id(user_id)
 
     if user:
-        if form_data.email.lower() != user.email:
-            email_user = Users.get_user_by_email(form_data.email.lower())
-            if email_user:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=ERROR_MESSAGES.EMAIL_TAKEN,
-                )
-
         if form_data.password:
             hashed = get_password_hash(form_data.password)
             log.debug(f"hashed: {hashed}")
@@ -334,7 +326,7 @@ async def update_user_by_id(
 
 
 @router.delete("/{user_id}", response_model=bool)
-async def delete_user_by_id(user_id: str, user=Depends(get_admin_user)):
+async def delete_user_by_id(user_id: str, user=Depends(get_verified_user)):
     if user.id != user_id:
         result = Auths.delete_auth_by_id(user_id)
 

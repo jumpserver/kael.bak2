@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from pytz import UTC
 from typing import Optional, Union
 
+from jms import check_user
 from open_webui.models.users import Users
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import (
@@ -118,72 +119,13 @@ def get_http_authorization_cred(auth_header: Optional[str]):
         return None
 
 
-def get_current_user(
-        request: Request,
-        background_tasks: BackgroundTasks,
-        auth_token: HTTPAuthorizationCredentials = Depends(bearer_security),
-):
-    token = None
+def get_current_user(request: Request):
+    check_user_handler = check_user.CheckUserHandler()
 
-    if auth_token is not None:
-        token = auth_token.credentials
-
-    if token is None and "token" in request.cookies:
-        token = request.cookies.get("token")
-
-    if token is None:
-        raise HTTPException(status_code=403, detail="Not authenticated")
-
-    # auth by api key
-    if token.startswith("sk-"):
-        if not request.state.enable_api_key:
-            raise HTTPException(
-                status.HTTP_403_FORBIDDEN, detail=ERROR_MESSAGES.API_KEY_NOT_ALLOWED
-            )
-
-        if request.app.state.config.ENABLE_API_KEY_ENDPOINT_RESTRICTIONS:
-            allowed_paths = [
-                path.strip()
-                for path in str(
-                    request.app.state.config.API_KEY_ALLOWED_ENDPOINTS
-                ).split(",")
-            ]
-
-            # Check if the request path matches any allowed endpoint.
-            if not any(
-                    request.url.path == allowed
-                    or request.url.path.startswith(allowed + "/")
-                    for allowed in allowed_paths
-            ):
-                raise HTTPException(
-                    status.HTTP_403_FORBIDDEN, detail=ERROR_MESSAGES.API_KEY_NOT_ALLOWED
-                )
-
-        return get_current_user_by_api_key(token)
-
-    # auth by jwt token
     try:
-        data = decode_token(token)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token",
-        )
-
-    if data is not None and "id" in data:
-        user = Users.get_user_by_id(data["id"])
-        if user is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=ERROR_MESSAGES.INVALID_TOKEN,
-            )
-        else:
-            # Refresh the user's last active timestamp asynchronously
-            # to prevent blocking the request
-            if background_tasks:
-                background_tasks.add_task(Users.update_user_last_active_by_id, user.id)
+        user = check_user_handler.check_user_by_cookies(request)
         return user
-    else:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ERROR_MESSAGES.UNAUTHORIZED,
@@ -205,18 +147,4 @@ def get_current_user_by_api_key(api_key: str):
 
 
 def get_verified_user(user=Depends(get_current_user)):
-    if user.role not in {"user", "admin"}:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
-        )
-    return user
-
-
-def get_admin_user(user=Depends(get_current_user)):
-    if user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
-        )
     return user
