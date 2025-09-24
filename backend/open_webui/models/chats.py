@@ -6,7 +6,7 @@ from typing import Optional, List
 from fastapi import HTTPException
 from starlette import status
 
-from jms import session_manager
+from ..jms import session_manager
 from open_webui.internal.db import Base, get_db
 from open_webui.models.tags import TagModel, Tags
 from open_webui.env import SRC_LOG_LEVELS
@@ -111,11 +111,11 @@ class ChatTable:
     def insert_new_chat(self, form_data: ChatForm, sid: str):
         from open_webui.socket.main import SID_SESSION_HANDLER
         session_handler = SID_SESSION_HANDLER.get(sid)
-        if not session_handler:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Session handler not found",
-            )
+        # if not session_handler:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_400_BAD_REQUEST,
+        #         detail="Session handler not found",
+        #     )
 
         ai_model = form_data.chat.get("models", [None])[0]
         jms_session = session_handler.create_new_session(ai_model)

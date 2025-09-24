@@ -474,7 +474,7 @@
 <div
 	bind:this={navElement}
 	id="sidebar"
-	class="h-screen max-h-[100dvh] min-h-screen select-none {$showSidebar
+	class=" max-h-[100dvh] min-h-screen select-none {$showSidebar
 		? 'md:relative w-[260px] max-w-[260px]'
 		: '-translate-x-[260px] w-[0px]'} {$isApp
 		? `ml-[4.5rem] md:ml-0 `
@@ -482,13 +482,21 @@
         "
 	data-state={$showSidebar}
 >
-	<div
-		class="py-2 my-auto flex flex-col justify-between h-screen max-h-[100dvh] w-[260px] overflow-x-hidden z-50 {$showSidebar
-			? ''
-			: 'invisible'}"
-	>
-		<div class="px-1.5 flex justify-between space-x-1 text-gray-600 dark:text-gray-400">
-			<button
+	<div class="sidebar-header h-header-height flex items-center justify-between px-2" style="height: 52px;">
+		<button
+				class=" cursor-pointer p-[7px] flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-900 transition"
+				on:click={async () => {
+					selectedChatId = null;
+					await goto('/');
+					const newChatButton = document.getElementById('new-chat-button');
+					setTimeout(() => {
+						newChatButton?.click();
+					}, 0);
+				}}
+		>
+			<PencilSquare className="size-5" strokeWidth="2" />
+		</button>
+	    <button
 				class=" cursor-pointer p-[7px] flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-900 transition"
 				on:click={() => {
 					showSidebar.set(!$showSidebar);
@@ -511,109 +519,14 @@
 					</svg>
 				</div>
 			</button>
-
-			<a
-				id="sidebar-new-chat-button"
-				class="flex justify-between items-center flex-1 rounded-lg px-2 py-1 h-full text-right hover:bg-gray-100 dark:hover:bg-gray-900 transition no-drag-region"
-				href="/"
-				draggable="false"
-				on:click={async () => {
-					selectedChatId = null;
-					await goto('/');
-					const newChatButton = document.getElementById('new-chat-button');
-					setTimeout(() => {
-						newChatButton?.click();
-						if ($mobile) {
-							showSidebar.set(false);
-						}
-					}, 0);
-				}}
-			>
-				<div class="flex items-center">
-					<div class="self-center mx-1.5">
-						<img
-							crossorigin="anonymous"
-							src="{WEBUI_BASE_URL}/static/favicon.png"
-							class=" size-5 -translate-x-1.5 rounded-full"
-							alt="logo"
-						/>
-					</div>
-					<div class=" self-center font-medium text-sm text-gray-850 dark:text-white font-primary">
-						{$i18n.t('New Chat')}
-					</div>
-				</div>
-
-				<div>
-					<PencilSquare className=" size-5" strokeWidth="2" />
-				</div>
-			</a>
+	</div>
+	<div
+		class="siderbar-content py-2 my-auto flex flex-col justify-between max-h-[100dvh] w-[260px] overflow-x-hidden z-50 {$showSidebar
+			? ''
+			: 'invisible'}"
+	>
+		<div class="px-1.5 flex gap-1.5 space-x-1 text-gray-600 dark:text-gray-400">
 		</div>
-
-		<!-- {#if $user?.role === 'admin'}
-			<div class="px-1.5 flex justify-center text-gray-800 dark:text-gray-200">
-				<a
-					class="grow flex items-center space-x-3 rounded-lg px-2 py-[7px] hover:bg-gray-100 dark:hover:bg-gray-900 transition"
-					href="/home"
-					on:click={() => {
-						selectedChatId = null;
-						chatId.set('');
-
-						if ($mobile) {
-							showSidebar.set(false);
-						}
-					}}
-					draggable="false"
-				>
-					<div class="self-center">
-						<Home strokeWidth="2" className="size-[1.1rem]" />
-					</div>
-
-					<div class="flex self-center translate-y-[0.5px]">
-						<div class=" self-center font-medium text-sm font-primary">{$i18n.t('Home')}</div>
-					</div>
-				</a>
-			</div>
-		{/if} -->
-
-		<!--{#if $user?.role === 'admin' || $user?.permissions?.workspace?.models || $user?.permissions?.workspace?.knowledge || $user?.permissions?.workspace?.prompts || $user?.permissions?.workspace?.tools}-->
-		<!--	<div class="px-1.5 flex justify-center text-gray-800 dark:text-gray-200">-->
-		<!--		<a-->
-		<!--			class="grow flex items-center space-x-3 rounded-lg px-2 py-[7px] hover:bg-gray-100 dark:hover:bg-gray-900 transition"-->
-		<!--			href="/workspace"-->
-		<!--			on:click={() => {-->
-		<!--				selectedChatId = null;-->
-		<!--				chatId.set('');-->
-
-		<!--				if ($mobile) {-->
-		<!--					showSidebar.set(false);-->
-		<!--				}-->
-		<!--			}}-->
-		<!--			draggable="false"-->
-		<!--		>-->
-		<!--			<div class="self-center">-->
-		<!--				<svg-->
-		<!--					xmlns="http://www.w3.org/2000/svg"-->
-		<!--					fill="none"-->
-		<!--					viewBox="0 0 24 24"-->
-		<!--					stroke-width="2"-->
-		<!--					stroke="currentColor"-->
-		<!--					class="size-[1.1rem]"-->
-		<!--				>-->
-		<!--					<path-->
-		<!--						stroke-linecap="round"-->
-		<!--						stroke-linejoin="round"-->
-		<!--						d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 0 0 2.25-2.25V6a2.25 2.25 0 0 0-2.25-2.25H6A2.25 2.25 0 0 0 3.75 6v2.25A2.25 2.25 0 0 0 6 10.5Zm0 9.75h2.25A2.25 2.25 0 0 0 10.5 18v-2.25a2.25 2.25 0 0 0-2.25-2.25H6a2.25 2.25 0 0 0-2.25 2.25V18A2.25 2.25 0 0 0 6 20.25Zm9.75-9.75H18a2.25 2.25 0 0 0 2.25-2.25V6A2.25 2.25 0 0 0 18 3.75h-2.25A2.25 2.25 0 0 0 13.5 6v2.25a2.25 2.25 0 0 0 2.25 2.25Z"-->
-		<!--					/>-->
-		<!--				</svg>-->
-		<!--			</div>-->
-
-		<!--			<div class="flex self-center translate-y-[0.5px]">-->
-		<!--				<div class=" self-center font-medium text-sm font-primary">{$i18n.t('Workspace')}</div>-->
-		<!--			</div>-->
-		<!--		</a>-->
-		<!--	</div>-->
-		<!--{/if}-->
-
 		<div class="relative {$temporaryChatEnabled ? 'opacity-20' : ''}">
 			{#if $temporaryChatEnabled}
 				<div class="absolute z-40 w-full h-full flex justify-center"></div>
@@ -824,24 +737,6 @@
 											: 'pt-5'} pb-1.5"
 									>
 										{$i18n.t(chat.time_range)}
-										<!-- localisation keys for time_range to be recognized from the i18next parser (so they don't get automatically removed):
-							{$i18n.t('Today')}
-							{$i18n.t('Yesterday')}
-							{$i18n.t('Previous 7 days')}
-							{$i18n.t('Previous 30 days')}
-							{$i18n.t('January')}
-							{$i18n.t('February')}
-							{$i18n.t('March')}
-							{$i18n.t('April')}
-							{$i18n.t('May')}
-							{$i18n.t('June')}
-							{$i18n.t('July')}
-							{$i18n.t('August')}
-							{$i18n.t('September')}
-							{$i18n.t('October')}
-							{$i18n.t('November')}
-							{$i18n.t('December')}
-							-->
 									</div>
 								{/if}
 
@@ -894,7 +789,9 @@
 			</Folder>
 		</div>
 
-		<div class="px-2">
+		
+	</div>
+	<div class="px-2">
 			<div class="flex flex-col font-primary">
 				{#if $user !== undefined && $user !== null}
 					<button
@@ -915,7 +812,6 @@
 				{/if}
 			</div>
 		</div>
-	</div>
 </div>
 
 <style>
@@ -926,5 +822,12 @@
 	}
 	.scrollbar-hidden::-webkit-scrollbar-thumb {
 		visibility: hidden;
+	}
+	.__menu-item {
+		cursor: pointer;
+		min-height: 36px;
+	}
+	.siderbar-content {
+		height: calc(100dvh - 106px);
 	}
 </style>

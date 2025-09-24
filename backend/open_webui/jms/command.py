@@ -7,9 +7,9 @@ from datetime import datetime
 
 import socketio
 
-from wisp.protobuf import service_pb2
-from wisp.exceptions import WispError
-from wisp.protobuf.common_pb2 import Session, CommandACL, RiskLevel
+from .wisp.protobuf import service_pb2
+from .wisp.exceptions import WispError
+from .wisp.protobuf.common_pb2 import Session, CommandACL, RiskLevel
 from open_webui.env import SRC_LOG_LEVELS
 from .base import BaseWisp
 from .schemas import CommandRecord, JMSState, AskResponse, AskResponseType, ResponseMeta, reply

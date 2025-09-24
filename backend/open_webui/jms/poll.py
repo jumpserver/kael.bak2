@@ -4,10 +4,10 @@ import logging
 import asyncio
 import threading
 
-from wisp import PROJECT_DIR
-from wisp.protobuf import service_pb2
-from wisp.exceptions import WispError
-from wisp.protobuf.common_pb2 import KillSession
+from jms.wisp import PROJECT_DIR
+from jms.wisp.protobuf import service_pb2
+from jms.wisp.exceptions import WispError
+from jms.wisp.protobuf.common_pb2 import KillSession
 from open_webui.env import SRC_LOG_LEVELS
 from .base import BaseWisp
 from .session import JMSSession

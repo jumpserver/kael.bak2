@@ -135,7 +135,7 @@
 						</button>
 					</Tooltip>
 
-					<Tooltip content={$i18n.t('New Chat')}>
+					<Tooltip content={$i18n.t('New Chat 23')}>
 						<button
 							id="new-chat-button"
 							class=" flex {$showSidebar
