@@ -57,6 +57,7 @@
 	import ChannelModal from './Sidebar/ChannelModal.svelte';
 	import ChannelItem from './Sidebar/ChannelItem.svelte';
 	import PencilSquare from '../icons/PencilSquare.svelte';
+	import ToggleBar from '../icons/ToggleBar.svelte';
 	import Home from '../icons/Home.svelte';
 
 	const BREAKPOINT = 768;
@@ -503,20 +504,7 @@
 				}}
 			>
 				<div class=" m-auto self-center">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke-width="2"
-						stroke="currentColor"
-						class="size-5"
-					>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"
-						/>
-					</svg>
+					<ToggleBar className="size-5" strokeWidth="2" />
 				</div>
 			</button>
 	</div>

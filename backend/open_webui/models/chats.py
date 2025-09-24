@@ -111,53 +111,60 @@ class ChatTable:
     def insert_new_chat(self, form_data: ChatForm, sid: str):
         from open_webui.socket.main import SID_SESSION_HANDLER
         session_handler = SID_SESSION_HANDLER.get(sid)
-        # if not session_handler:
-        #     raise HTTPException(
-        #         status_code=status.HTTP_400_BAD_REQUEST,
-        #         detail="Session handler not found",
-        #     )
+        if not session_handler:
+           raise HTTPException(
+               status_code=status.HTTP_400_BAD_REQUEST,
+               detail="Session handler not found",
+           )
+
 
         ai_model = form_data.chat.get("models", [None])[0]
         jms_session = session_handler.create_new_session(ai_model)
 
+        session_id = jms_session.session.id
+        user_id = jms_session.session.user_id
+
+
         chat = {
-            'id': jms_session.session.id,
-            'user_id': jms_session.session.user_id,
-            'title': form_data.chat['title'] if 'title' in form_data.chat else 'New Chat',
-            'chat': form_data.chat,
-            'created_at': int(time.time()),
-            'updated_at': int(time.time()),
-            'share_id': None,
-            'archived': False,
-            'pinned': False,
-            'meta': {},
-            'folder_id': None,
+           'id': session_id,
+           'user_id': user_id,
+           'title': form_data.chat['title'] if 'title' in form_data.chat else 'New Chat',
+           'chat': form_data.chat,
+           'created_at': int(time.time()),
+           'updated_at': int(time.time()),
+           'share_id': None,
+           'archived': False,
+           'pinned': False,
+           'meta': {},
+           'folder_id': None,
         }
         session_manager.register_jms_session(jms_session, chat)
         jms_session.active_session()
         return chat
 
-        # with get_db() as db:
-        #     chat = ChatModel(
-        #         **{
-        #             "id": str(uuid.uuid4()),
-        #             "user_id": user_id,
-        #             "title": (
-        #                 form_data.chat["title"]
-        #                 if "title" in form_data.chat
-        #                 else "New Chat"
-        #             ),
-        #             "chat": form_data.chat,
-        #             "created_at": int(time.time()),
-        #             "updated_at": int(time.time()),
-        #         }
-        #     )
-        #
-        #     result = Chat(**chat.model_dump())
-        #     db.add(result)
-        #     db.commit()
-        #     db.refresh(result)
-        #     return ChatModel.model_validate(result) if result else None
+        user_id = '123123123'
+
+        with get_db() as db:
+            chat = ChatModel(
+                **{
+                    "id": str(uuid.uuid4()),
+                    "user_id": user_id,
+                    "title": (
+                        form_data.chat["title"]
+                        if "title" in form_data.chat
+                        else "New Chat"
+                    ),
+                    "chat": form_data.chat,
+                    "created_at": int(time.time()),
+                    "updated_at": int(time.time()),
+                }
+            )
+        
+            result = Chat(**chat.model_dump())
+            db.add(result)
+            db.commit()
+            db.refresh(result)
+            return ChatModel.model_validate(result) if result else None
 
     # TODO
     def import_chat(

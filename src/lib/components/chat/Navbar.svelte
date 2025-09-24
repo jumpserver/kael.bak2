@@ -29,6 +29,7 @@
 
 	import PencilSquare from '../icons/PencilSquare.svelte';
 	import Banner from '../common/Banner.svelte';
+	import ToggleBar from '../icons/ToggleBar.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -66,10 +67,10 @@
 						on:click={() => {
 							showSidebar.set(!$showSidebar);
 						}}
-						aria-label="Toggle Sidebar"
+						aria-label="Toggle Sidebar 123"
 					>
 						<div class=" m-auto self-center">
-							<MenuLines />
+							<ToggleBar className="size-5" strokeWidth="2" />
 						</div>
 					</button>
 				</div>
