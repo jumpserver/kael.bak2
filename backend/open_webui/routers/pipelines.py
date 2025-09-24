@@ -25,7 +25,7 @@ from open_webui.constants import ERROR_MESSAGES
 
 from open_webui.routers.openai import get_all_models_responses
 
-from open_webui.utils.auth import get_admin_user
+from open_webui.utils.auth import get_verified_user
 
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["MAIN"])
@@ -58,7 +58,7 @@ def get_sorted_filters(model_id, models):
 
 
 async def process_pipeline_inlet_filter(request, payload, user, models):
-    user = {"id": user.id, "email": user.email, "name": user.name, "role": user.role}
+    user = {"id": user.id, "username": user.username, "name": user.name, "role": 'admin'}
     model_id = payload["model"]
     sorted_filters = get_sorted_filters(model_id, models)
     model = models[model_id]
@@ -108,7 +108,7 @@ async def process_pipeline_inlet_filter(request, payload, user, models):
 
 
 async def process_pipeline_outlet_filter(request, payload, user, models):
-    user = {"id": user.id, "email": user.email, "name": user.name, "role": user.role}
+    user = {"id": user.id, "username": user.username, "name": user.name, "role": 'admin'}
     model_id = payload["model"]
     sorted_filters = get_sorted_filters(model_id, models)
     model = models[model_id]
@@ -196,7 +196,7 @@ async def upload_pipeline(
     request: Request,
     urlIdx: int = Form(...),
     file: UploadFile = File(...),
-    user=Depends(get_admin_user),
+    user=Depends(get_verified_user),
 ):
     log.info(f"upload_pipeline: urlIdx={urlIdx}, filename={file.filename}")
     # Check if the uploaded file is a python file
@@ -263,7 +263,7 @@ class AddPipelineForm(BaseModel):
 
 @router.post("/add")
 async def add_pipeline(
-    request: Request, form_data: AddPipelineForm, user=Depends(get_admin_user)
+    request: Request, form_data: AddPipelineForm, user=Depends(get_verified_user)
 ):
     r = None
     try:
@@ -308,7 +308,7 @@ class DeletePipelineForm(BaseModel):
 
 @router.delete("/delete")
 async def delete_pipeline(
-    request: Request, form_data: DeletePipelineForm, user=Depends(get_admin_user)
+    request: Request, form_data: DeletePipelineForm, user=Depends(get_verified_user)
 ):
     r = None
     try:
@@ -348,7 +348,7 @@ async def delete_pipeline(
 
 @router.get("/")
 async def get_pipelines(
-    request: Request, urlIdx: Optional[int] = None, user=Depends(get_admin_user)
+    request: Request, urlIdx: Optional[int] = None, user=Depends(get_verified_user)
 ):
     r = None
     try:
@@ -385,7 +385,7 @@ async def get_pipeline_valves(
     request: Request,
     urlIdx: Optional[int],
     pipeline_id: str,
-    user=Depends(get_admin_user),
+    user=Depends(get_verified_user),
 ):
     r = None
     try:
@@ -424,7 +424,7 @@ async def get_pipeline_valves_spec(
     request: Request,
     urlIdx: Optional[int],
     pipeline_id: str,
-    user=Depends(get_admin_user),
+    user=Depends(get_verified_user),
 ):
     r = None
     try:
@@ -465,7 +465,7 @@ async def update_pipeline_valves(
     urlIdx: Optional[int],
     pipeline_id: str,
     form_data: dict,
-    user=Depends(get_admin_user),
+    user=Depends(get_verified_user),
 ):
     r = None
     try:

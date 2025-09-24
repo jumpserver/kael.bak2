@@ -20,7 +20,7 @@
 
 	let loaded = false;
 
-	let mode = $config?.features.enable_ldap ? 'ldap' : 'signin';
+	let mode = 'signin';
 
 	let name = '';
 	let email = '';
@@ -38,11 +38,8 @@
 		if (sessionUser) {
 			console.log(sessionUser);
 			toast.success($i18n.t(`You're now logged in.`));
-			if (sessionUser.token) {
-				localStorage.token = sessionUser.token;
-			}
 
-			$socket.emit('user-join', { auth: { token: sessionUser.token } });
+			$socket.emit('user-join', { user: sessionUser });
 			await user.set(sessionUser);
 			await config.set(await getBackendConfig());
 
@@ -61,7 +58,7 @@
 	};
 
 	const signUpHandler = async () => {
-		const sessionUser = await userSignUp(name, email, password, generateInitialsImage(name)).catch(
+		const sessionUser = await userSignUp().catch(
 			(error) => {
 				toast.error(`${error}`);
 				return null;
@@ -80,13 +77,7 @@
 	};
 
 	const submitHandler = async () => {
-		if (mode === 'ldap') {
-			await ldapSignInHandler();
-		} else if (mode === 'signin') {
-			await signInHandler();
-		} else {
-			await signUpHandler();
-		}
+		await signUpHandler();
 	};
 
 	const checkOauthCallback = async () => {
@@ -97,19 +88,13 @@
 		if (!hash) {
 			return;
 		}
-		const params = new URLSearchParams(hash);
-		const token = params.get('token');
-		if (!token) {
-			return;
-		}
-		const sessionUser = await getSessionUser(token).catch((error) => {
+		const sessionUser = await getSessionUser().catch((error) => {
 			toast.error(`${error}`);
 			return null;
 		});
 		if (!sessionUser) {
 			return;
 		}
-		localStorage.token = token;
 		await setSessionUser(sessionUser);
 	};
 

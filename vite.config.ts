@@ -39,5 +39,27 @@ export default defineConfig({
 	},
 	worker: {
 		format: 'es'
-	}
+	},
+	server: {
+      port: 5173,
+      proxy: {
+        '^/api/': {
+          target: 'http://localhost:8083',
+          changeOrigin: true,
+        },
+      '/openai': {
+		 target: 'http://localhost:8083',
+		 changeOrigin: true 
+		},
+      '/ollama': {
+		 target: 'http://localhost:8083',
+		 changeOrigin: true 
+		},
+      '/ws': {
+		 target: 'http://localhost:8083',
+		 ws: true,
+		 changeOrigin: true 
+		}
+      },
+    },
 });

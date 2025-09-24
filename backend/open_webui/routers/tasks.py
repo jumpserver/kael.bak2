@@ -16,14 +16,10 @@ from open_webui.utils.task import (
     emoji_generation_template,
     moa_response_generation_template,
 )
-from open_webui.utils.auth import get_admin_user, get_verified_user
+from open_webui.utils.auth import get_verified_user
 from open_webui.constants import TASKS
 
 from open_webui.routers.pipelines import process_pipeline_inlet_filter
-from open_webui.utils.filter import (
-    get_sorted_filter_ids,
-    process_filter_functions,
-)
 from open_webui.utils.task import get_task_model_id
 
 from open_webui.config import (
@@ -88,7 +84,7 @@ class TaskConfigForm(BaseModel):
 
 @router.post("/config/update")
 async def update_task_config(
-    request: Request, form_data: TaskConfigForm, user=Depends(get_admin_user)
+    request: Request, form_data: TaskConfigForm, user=Depends(get_verified_user)
 ):
     request.app.state.config.TASK_MODEL = form_data.TASK_MODEL
     request.app.state.config.TASK_MODEL_EXTERNAL = form_data.TASK_MODEL_EXTERNAL
@@ -178,7 +174,7 @@ async def generate_title(
     )
 
     log.debug(
-        f"generating chat title using model {task_model_id} for user {user.email} "
+        f"generating chat title using model {task_model_id} for user {user.username} "
     )
 
     if request.app.state.config.TITLE_GENERATION_PROMPT_TEMPLATE != "":
@@ -202,7 +198,6 @@ async def generate_title(
         messages,
         {
             "name": user.name,
-            "location": user.info.get("location") if user.info else None,
         },
     )
 
@@ -276,7 +271,7 @@ async def generate_chat_tags(
     )
 
     log.debug(
-        f"generating chat tags using model {task_model_id} for user {user.email} "
+        f"generating chat tags using model {task_model_id} for user {user.username} "
     )
 
     if request.app.state.config.TAGS_GENERATION_PROMPT_TEMPLATE != "":
@@ -344,7 +339,7 @@ async def generate_image_prompt(
     )
 
     log.debug(
-        f"generating image prompt using model {task_model_id} for user {user.email} "
+        f"generating image prompt using model {task_model_id} for user {user.username} "
     )
 
     if request.app.state.config.IMAGE_PROMPT_GENERATION_PROMPT_TEMPLATE != "":
@@ -431,7 +426,7 @@ async def generate_queries(
     )
 
     log.debug(
-        f"generating {type} queries using model {task_model_id} for user {user.email}"
+        f"generating {type} queries using model {task_model_id} for user {user.username}"
     )
 
     if (request.app.state.config.QUERY_GENERATION_PROMPT_TEMPLATE).strip() != "":
@@ -518,7 +513,7 @@ async def generate_autocompletion(
     )
 
     log.debug(
-        f"generating autocompletion using model {task_model_id} for user {user.email}"
+        f"generating autocompletion using model {task_model_id} for user {user.username}"
     )
 
     if (request.app.state.config.AUTOCOMPLETE_GENERATION_PROMPT_TEMPLATE).strip() != "":
@@ -586,7 +581,7 @@ async def generate_emoji(
         models,
     )
 
-    log.debug(f"generating emoji using model {task_model_id} for user {user.email} ")
+    log.debug(f"generating emoji using model {task_model_id} for user {user.username} ")
 
     template = DEFAULT_EMOJI_GENERATION_PROMPT_TEMPLATE
 

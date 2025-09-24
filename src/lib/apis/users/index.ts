@@ -147,7 +147,7 @@ export const getUsers = async (token: string) => {
 export const getUserSettings = async () => {
 	return {
 		'ui': {
-			'models': ['arena-model'],
+			'models': ['gpt-4o-mini'],
 			'version': '0.0.1'
 	}};
 

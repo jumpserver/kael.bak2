@@ -314,8 +314,6 @@ from open_webui.utils.access_control import has_access
 
 from open_webui.utils.auth import (
     get_http_authorization_cred,
-    decode_token,
-    get_admin_user,
     get_verified_user,
 )
 from open_webui.utils.security_headers import SecurityHeadersMiddleware
@@ -378,7 +376,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Open WebUI",
+    title="JumpServer Chat",
     docs_url="/docs" if ENV == "dev" else None,
     openapi_url="/openapi.json" if ENV == "dev" else None,
     redoc_url=None,
@@ -926,8 +924,8 @@ async def get_models(request: Request, user=Depends(get_verified_user)):
 
 
 @app.get("/api/models/base")
-async def get_base_models(request: Request, user=Depends(get_admin_user)):
-    models = await get_all_base_models(request)
+async def get_base_models(request: Request, user=Depends(get_verified_user)):
+    models = await get_all_base_models(request, user=user)
     return {"data": models}
 
 
@@ -1159,14 +1157,14 @@ class UrlForm(BaseModel):
 
 
 @app.get("/api/webhook")
-async def get_webhook_url(user=Depends(get_admin_user)):
+async def get_webhook_url(user=Depends(get_verified_user)):
     return {
         "url": app.state.config.WEBHOOK_URL,
     }
 
 
 @app.post("/api/webhook")
-async def update_webhook_url(form_data: UrlForm, user=Depends(get_admin_user)):
+async def update_webhook_url(form_data: UrlForm, user=Depends(get_verified_user)):
     app.state.config.WEBHOOK_URL = form_data.url
     app.state.WEBHOOK_URL = app.state.config.WEBHOOK_URL
     return {"url": app.state.config.WEBHOOK_URL}
@@ -1187,7 +1185,7 @@ async def get_manifest_json():
         return {
             "name": app.state.WEBUI_NAME,
             "short_name": app.state.WEBUI_NAME,
-            "description": "Open WebUI is an open, extensible, user-friendly interface for AI that adapts to your workflow.",
+            "description": "JumpServer Chat is an open, extensible, user-friendly interface for AI that adapts to your workflow.",
             "start_url": "/",
             "display": "standalone",
             "background_color": "#343541",

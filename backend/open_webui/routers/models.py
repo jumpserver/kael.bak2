@@ -11,7 +11,7 @@ from open_webui.constants import ERROR_MESSAGES
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 
-from open_webui.utils.auth import get_admin_user, get_verified_user
+from open_webui.utils.auth import get_verified_user
 from open_webui.utils.access_control import has_access, has_permission
 
 
@@ -25,10 +25,7 @@ router = APIRouter()
 
 @router.get("/", response_model=list[ModelUserResponse])
 async def get_models(id: Optional[str] = None, user=Depends(get_verified_user)):
-    if user.role == "admin":
-        return Models.get_models()
-    else:
-        return Models.get_models_by_user_id(user.id)
+    return Models.get_models()
 
 
 ###########################
@@ -37,7 +34,7 @@ async def get_models(id: Optional[str] = None, user=Depends(get_verified_user)):
 
 
 @router.get("/base", response_model=list[ModelResponse])
-async def get_base_models(user=Depends(get_admin_user)):
+async def get_base_models(user=Depends(get_verified_user)):
     return Models.get_base_models()
 
 
@@ -52,14 +49,6 @@ async def create_new_model(
     form_data: ModelForm,
     user=Depends(get_verified_user),
 ):
-    if user.role != "admin" and not has_permission(
-        user.id, "workspace.models", request.app.state.config.USER_PERMISSIONS
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ERROR_MESSAGES.UNAUTHORIZED,
-        )
-
     model = Models.get_model_by_id(form_data.id)
     if model:
         raise HTTPException(
@@ -89,8 +78,7 @@ async def get_model_by_id(id: str, user=Depends(get_verified_user)):
     model = Models.get_model_by_id(id)
     if model:
         if (
-            user.role == "admin"
-            or model.user_id == user.id
+            model.user_id == user.id
             or has_access(user.id, "read", model.access_control)
         ):
             return model
@@ -111,8 +99,7 @@ async def toggle_model_by_id(id: str, user=Depends(get_verified_user)):
     model = Models.get_model_by_id(id)
     if model:
         if (
-            user.role == "admin"
-            or model.user_id == user.id
+            model.user_id == user.id
             or has_access(user.id, "write", model.access_control)
         ):
             model = Models.toggle_model_by_id(id)
@@ -155,16 +142,6 @@ async def update_model_by_id(
             detail=ERROR_MESSAGES.NOT_FOUND,
         )
 
-    if (
-        model.user_id != user.id
-        and not has_access(user.id, "write", model.access_control)
-        and user.role != "admin"
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
-        )
-
     model = Models.update_model_by_id(id, form_data)
     return model
 
@@ -183,21 +160,11 @@ async def delete_model_by_id(id: str, user=Depends(get_verified_user)):
             detail=ERROR_MESSAGES.NOT_FOUND,
         )
 
-    if (
-        user.role != "admin"
-        and model.user_id != user.id
-        and not has_access(user.id, "write", model.access_control)
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ERROR_MESSAGES.UNAUTHORIZED,
-        )
-
     result = Models.delete_model_by_id(id)
     return result
 
 
 @router.delete("/delete/all", response_model=bool)
-async def delete_all_models(user=Depends(get_admin_user)):
+async def delete_all_models(user=Depends(get_verified_user)):
     result = Models.delete_all_models()
     return result

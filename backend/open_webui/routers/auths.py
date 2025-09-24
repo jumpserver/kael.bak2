@@ -29,7 +29,7 @@ from open_webui.utils.misc import validate_email_format
 from open_webui.utils.auth import (
     create_api_key,
     create_token,
-    get_admin_user,
+    get_verified_user,
     get_verified_user,
     get_current_user,
     get_password_hash,
@@ -60,42 +60,17 @@ class SessionUserResponse(Token, UserResponse):
     permissions: Optional[dict] = None
 
 
-@router.get("/", response_model=SessionUserResponse)
+@router.get("/")
 async def get_session_user(
-    request: Request, response: Response, user=Depends(get_current_user)
+    request: Request, user=Depends(get_current_user)
 ):
-
-    token = create_token(
-        data={"id": user.id},
-        expires_delta=None,
-    )
-
-    # Set the cookie token
-    response.set_cookie(
-        key="token",
-        value=token,
-        expires=None,
-        httponly=True,  # Ensures the cookie is not accessible via JavaScript
-        samesite=WEBUI_AUTH_COOKIE_SAME_SITE,
-        secure=WEBUI_AUTH_COOKIE_SECURE,
-    )
-
-    user_permissions = get_permissions(
-        user.id, request.app.state.config.USER_PERMISSIONS
-    )
-
     return {
-        "token": token,
-        "token_type": "Bearer",
         "expires_at": None,
         "id": user.id,
-        "email": user.email,
         "name": user.name,
         "role": 'admin',
-        "profile_image_url": user.profile_image_url,
-        "permissions": user_permissions,
+        "permissions": request.app.state.config.USER_PERMISSIONS,
     }
-
 
 @router.post("/signin", response_model=SessionUserResponse)
 async def signin(request: Request, response: Response, form_data: SigninForm):
@@ -162,11 +137,10 @@ async def signin(request: Request, response: Response, form_data: SigninForm):
         return {
             "token": token,
             "token_type": "Bearer",
-            "expires_at": expires_at,
             "id": user.id,
-            "email": user.email,
+            "username": user.username,
             "name": user.name,
-            "role": user.role,
+            "role": 'admin',
             "profile_image_url": user.profile_image_url,
             "permissions": user_permissions,
         }
@@ -174,8 +148,28 @@ async def signin(request: Request, response: Response, form_data: SigninForm):
         raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_CRED)
 
 
+@router.get("/signup")
+async def signup(user=Depends(get_verified_user)):
+    return {
+        "id": user.id,
+        "name": user.name,
+        "username": user.username,
+        "role": 'admin',
+        "is_valid": user.is_valid,
+        "is_active": user.is_active,
+    }
+
+
+@router.get("/signout")
+async def signout(request: Request, response: Response):
+    response.delete_cookie("token")
+
+    return {"status": True}
+
+
+
 @router.post("/add", response_model=SigninResponse)
-async def add_user(form_data: AddUserForm, user=Depends(get_admin_user)):
+async def add_user(form_data: AddUserForm, user=Depends(get_verified_user)):
     if not validate_email_format(form_data.email.lower()):
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, detail=ERROR_MESSAGES.INVALID_EMAIL_FORMAT
@@ -200,9 +194,9 @@ async def add_user(form_data: AddUserForm, user=Depends(get_admin_user)):
                 "token": token,
                 "token_type": "Bearer",
                 "id": user.id,
-                "email": user.email,
+                "username": user.username,
                 "name": user.name,
-                "role": user.role,
+                "role": 'admin',
                 "profile_image_url": user.profile_image_url,
             }
         else:
@@ -251,7 +245,7 @@ async def get_admin_details(request: Request, user=Depends(get_current_user)):
 
 
 @router.get("/admin/config")
-async def get_admin_config(request: Request, user=Depends(get_admin_user)):
+async def get_admin_config(request: Request, user=Depends(get_verified_user)):
     return {
         "SHOW_ADMIN_DETAILS": request.app.state.config.SHOW_ADMIN_DETAILS,
         "WEBUI_URL": request.app.state.config.WEBUI_URL,
@@ -283,7 +277,7 @@ class AdminConfig(BaseModel):
 
 @router.post("/admin/config")
 async def update_admin_config(
-    request: Request, form_data: AdminConfig, user=Depends(get_admin_user)
+    request: Request, form_data: AdminConfig, user=Depends(get_verified_user)
 ):
     request.app.state.config.SHOW_ADMIN_DETAILS = form_data.SHOW_ADMIN_DETAILS
     request.app.state.config.WEBUI_URL = form_data.WEBUI_URL

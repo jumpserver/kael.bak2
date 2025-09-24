@@ -23,12 +23,11 @@ from fastapi import (
     status,
     APIRouter,
 )
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 
-from open_webui.utils.auth import get_admin_user, get_verified_user
+from open_webui.utils.auth import get_verified_user
 from open_webui.config import (
     WHISPER_MODEL_AUTO_UPDATE,
     WHISPER_MODEL_DIR,
@@ -157,7 +156,7 @@ class AudioConfigUpdateForm(BaseModel):
 
 
 @router.get("/config")
-async def get_audio_config(request: Request, user=Depends(get_admin_user)):
+async def get_audio_config(request: Request, user=Depends(get_verified_user)):
     return {
         "tts": {
             "OPENAI_API_BASE_URL": request.app.state.config.TTS_OPENAI_API_BASE_URL,
@@ -186,7 +185,7 @@ async def get_audio_config(request: Request, user=Depends(get_admin_user)):
 
 @router.post("/config/update")
 async def update_audio_config(
-    request: Request, form_data: AudioConfigUpdateForm, user=Depends(get_admin_user)
+    request: Request, form_data: AudioConfigUpdateForm, user=Depends(get_verified_user)
 ):
     request.app.state.config.TTS_OPENAI_API_BASE_URL = form_data.tts.OPENAI_API_BASE_URL
     request.app.state.config.TTS_OPENAI_API_KEY = form_data.tts.OPENAI_API_KEY
@@ -321,7 +320,7 @@ async def speech(request: Request):
 
             raise HTTPException(
                 status_code=getattr(r, "status", 500) if r else 500,
-                detail=detail if detail else "Open WebUI: Server Connection Error",
+                detail=detail if detail else "JumpServer Chat: Server Connection Error",
             )
 
     elif request.app.state.config.TTS_ENGINE == "elevenlabs":
@@ -376,7 +375,7 @@ async def speech(request: Request):
 
             raise HTTPException(
                 status_code=getattr(r, "status", 500) if r else 500,
-                detail=detail if detail else "Open WebUI: Server Connection Error",
+                detail=detail if detail else "JumpServer Chat: Server Connection Error",
             )
 
     elif request.app.state.config.TTS_ENGINE == "azure":
@@ -433,7 +432,7 @@ async def speech(request: Request):
 
             raise HTTPException(
                 status_code=getattr(r, "status", 500) if r else 500,
-                detail=detail if detail else "Open WebUI: Server Connection Error",
+                detail=detail if detail else "JumpServer Chat: Server Connection Error",
             )
 
     elif request.app.state.config.TTS_ENGINE == "transformers":
@@ -552,7 +551,7 @@ def transcribe(request: Request, file_path):
                 except Exception:
                     detail = f"External: {e}"
 
-            raise Exception(detail if detail else "Open WebUI: Server Connection Error")
+            raise Exception(detail if detail else "JumpServer Chat: Server Connection Error")
 
     elif request.app.state.config.STT_ENGINE == "deepgram":
         try:
@@ -615,7 +614,7 @@ def transcribe(request: Request, file_path):
                         detail = f"External: {res['error'].get('message', '')}"
                 except Exception:
                     detail = f"External: {e}"
-            raise Exception(detail if detail else "Open WebUI: Server Connection Error")
+            raise Exception(detail if detail else "JumpServer Chat: Server Connection Error")
 
     elif request.app.state.config.STT_ENGINE == "azure":
         # Check file exists and size
@@ -727,7 +726,7 @@ def transcribe(request: Request, file_path):
 
             raise HTTPException(
                 status_code=getattr(r, "status_code", 500) if r else 500,
-                detail=detail if detail else "Open WebUI: Server Connection Error",
+                detail=detail if detail else "JumpServer Chat: Server Connection Error",
             )
 
 

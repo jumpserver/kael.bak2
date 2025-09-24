@@ -34,7 +34,7 @@ from open_webui.utils.misc import (
     convert_logit_bias_input_to_json,
 )
 
-from open_webui.utils.auth import get_admin_user, get_verified_user
+from open_webui.utils.auth import get_verified_user
 from open_webui.utils.access_control import has_access
 
 log = logging.getLogger(__name__)
@@ -108,7 +108,7 @@ router = APIRouter()
 
 
 @router.get("/config")
-async def get_config(request: Request, user=Depends(get_admin_user)):
+async def get_config(request: Request, user=Depends(get_verified_user)):
     return {
         "ENABLE_OPENAI_API": request.app.state.config.ENABLE_OPENAI_API,
         "OPENAI_API_BASE_URLS": request.app.state.config.OPENAI_API_BASE_URLS,
@@ -126,7 +126,7 @@ class OpenAIConfigForm(BaseModel):
 
 @router.post("/config/update")
 async def update_config(
-        request: Request, form_data: OpenAIConfigForm, user=Depends(get_admin_user)
+        request: Request, form_data: OpenAIConfigForm, user=Depends(get_verified_user)
 ):
     request.app.state.config.ENABLE_OPENAI_API = form_data.ENABLE_OPENAI_API
     request.app.state.config.OPENAI_API_BASE_URLS = form_data.OPENAI_API_BASE_URLS
@@ -237,7 +237,7 @@ async def speech(request: Request, user=Depends(get_verified_user)):
 
             raise HTTPException(
                 status_code=r.status_code if r else 500,
-                detail=detail if detail else "Open WebUI: Server Connection Error",
+                detail=detail if detail else "JumpServer Chat: Server Connection Error",
             )
 
     except ValueError:
@@ -419,15 +419,12 @@ async def get_models(
                 # ClientError covers all aiohttp requests issues
                 log.exception(f"Client error: {str(e)}")
                 raise HTTPException(
-                    status_code=500, detail="Open WebUI: Server Connection Error"
+                    status_code=500, detail="JumpServer Chat: Server Connection Error"
                 )
             except Exception as e:
                 log.exception(f"Unexpected error: {e}")
                 error_detail = f"Unexpected error: {str(e)}"
                 raise HTTPException(status_code=500, detail=error_detail)
-
-    if user.role == "user" and not BYPASS_MODEL_ACCESS_CONTROL:
-        models["data"] = await get_filtered_models(models, user)
 
     return models
 
@@ -439,7 +436,7 @@ class ConnectionVerificationForm(BaseModel):
 
 @router.post("/verify")
 async def verify_connection(
-        form_data: ConnectionVerificationForm, user=Depends(get_admin_user)
+        form_data: ConnectionVerificationForm, user=Depends(get_verified_user)
 ):
     url = form_data.url
     key = form_data.key
@@ -471,7 +468,7 @@ async def verify_connection(
             # ClientError covers all aiohttp requests issues
             log.exception(f"Client error: {str(e)}")
             raise HTTPException(
-                status_code=500, detail="Open WebUI: Server Connection Error"
+                status_code=500, detail="JumpServer Chat: Server Connection Error"
             )
         except Exception as e:
             log.exception(f"Unexpected error: {e}")
@@ -507,25 +504,6 @@ async def generate_chat_completion(
         payload = apply_model_params_to_body_openai(params, payload)
         payload = apply_model_system_prompt_to_body(params, payload, metadata, user)
 
-        # Check if user has access to the model
-        if not bypass_filter and user.role == "user":
-            if not (
-                    user.id == model_info.user_id
-                    or has_access(
-                user.id, type="read", access_control=model_info.access_control
-            )
-            ):
-                raise HTTPException(
-                    status_code=403,
-                    detail="Model not found",
-                )
-    elif not bypass_filter:
-        if user.role != "admin":
-            raise HTTPException(
-                status_code=403,
-                detail="Model not found",
-            )
-
     await get_all_models(request)
     model = request.app.state.OPENAI_MODELS.get(model_id)
     if model:
@@ -553,8 +531,8 @@ async def generate_chat_completion(
         payload["user"] = {
             "name": user.name,
             "id": user.id,
-            "email": user.email,
-            "role": user.role,
+            "username": user.username,
+            "role": 'admin',
         }
 
     url = request.app.state.config.OPENAI_API_BASE_URLS[idx]
@@ -642,7 +620,7 @@ async def generate_chat_completion(
 
         raise HTTPException(
             status_code=r.status if r else 500,
-            detail=detail if detail else "Open WebUI: Server Connection Error",
+            detail=detail if detail else "JumpServer Chat: Server Connection Error",
         )
     finally:
         if not streaming and session:
@@ -710,7 +688,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
                 detail = f"External: {e}"
         raise HTTPException(
             status_code=r.status if r else 500,
-            detail=detail if detail else "Open WebUI: Server Connection Error",
+            detail=detail if detail else "JumpServer Chat: Server Connection Error",
         )
     finally:
         if not streaming and session:

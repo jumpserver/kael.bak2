@@ -15,7 +15,7 @@ from open_webui.config import CACHE_DIR
 from open_webui.constants import ERROR_MESSAGES
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from open_webui.utils.tools import get_tool_specs
-from open_webui.utils.auth import get_admin_user, get_verified_user
+from open_webui.utils.auth import get_verified_user
 from open_webui.utils.access_control import has_access, has_permission
 from open_webui.env import SRC_LOG_LEVELS
 
@@ -70,14 +70,6 @@ async def get_tools(request: Request, user=Depends(get_verified_user)):
             )
         )
 
-    if user.role != "admin":
-        tools = [
-            tool
-            for tool in tools
-            if tool.user_id == user.id
-            or has_access(user.id, "read", tool.access_control)
-        ]
-
     return tools
 
 
@@ -88,10 +80,7 @@ async def get_tools(request: Request, user=Depends(get_verified_user)):
 
 @router.get("/list", response_model=list[ToolUserResponse])
 async def get_tool_list(user=Depends(get_verified_user)):
-    if user.role == "admin":
-        tools = Tools.get_tools()
-    else:
-        tools = Tools.get_tools_by_user_id(user.id, "write")
+    tools = Tools.get_tools()
     return tools
 
 
@@ -101,7 +90,7 @@ async def get_tool_list(user=Depends(get_verified_user)):
 
 
 @router.get("/export", response_model=list[ToolModel])
-async def export_tools(user=Depends(get_admin_user)):
+async def export_tools(user=Depends(get_verified_user)):
     tools = Tools.get_tools()
     return tools
 
@@ -117,14 +106,6 @@ async def create_new_tools(
     form_data: ToolForm,
     user=Depends(get_verified_user),
 ):
-    if user.role != "admin" and not has_permission(
-        user.id, "workspace.tools", request.app.state.config.USER_PERMISSIONS
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ERROR_MESSAGES.UNAUTHORIZED,
-        )
-
     if not form_data.id.isidentifier():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -179,19 +160,7 @@ async def create_new_tools(
 @router.get("/id/{id}", response_model=Optional[ToolModel])
 async def get_tools_by_id(id: str, user=Depends(get_verified_user)):
     tools = Tools.get_tool_by_id(id)
-
-    if tools:
-        if (
-            user.role == "admin"
-            or tools.user_id == user.id
-            or has_access(user.id, "read", tools.access_control)
-        ):
-            return tools
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ERROR_MESSAGES.NOT_FOUND,
-        )
+    return tools
 
 
 ############################
@@ -211,17 +180,6 @@ async def update_tools_by_id(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ERROR_MESSAGES.NOT_FOUND,
-        )
-
-    # Is the user the original creator, in a group with write access, or an admin
-    if (
-        tools.user_id != user.id
-        and not has_access(user.id, "write", tools.access_control)
-        and user.role != "admin"
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ERROR_MESSAGES.UNAUTHORIZED,
         )
 
     try:
@@ -271,16 +229,6 @@ async def delete_tools_by_id(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ERROR_MESSAGES.NOT_FOUND,
-        )
-
-    if (
-        tools.user_id != user.id
-        and not has_access(user.id, "write", tools.access_control)
-        and user.role != "admin"
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ERROR_MESSAGES.UNAUTHORIZED,
         )
 
     result = Tools.delete_tool_by_id(id)
@@ -358,16 +306,6 @@ async def update_tools_valves_by_id(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ERROR_MESSAGES.NOT_FOUND,
-        )
-
-    if (
-        tools.user_id != user.id
-        and not has_access(user.id, "write", tools.access_control)
-        and user.role != "admin"
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
 
     if id in request.app.state.TOOLS:

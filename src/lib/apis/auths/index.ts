@@ -83,14 +83,13 @@ export const updateAdminConfig = async (token: string, body: object) => {
 	return res;
 };
 
-export const getSessionUser = async (token: string) => {
+export const getSessionUser = async () => {
 	let error = null;
 
 	const res = await apiFetch(`${WEBUI_API_BASE_URL}/auths/`, {
 		method: 'GET',
 		headers: {
 			'Content-Type': 'application/json',
-			Authorization: `Bearer ${token}`
 		},
 		credentials: 'include'
 	})
@@ -287,26 +286,14 @@ export const userSignIn = async (email: string, password: string) => {
 	return res;
 };
 
-export const userSignUp = async (
-	name: string,
-	email: string,
-	password: string,
-	profile_image_url: string
-) => {
+export const userSignUp = async () => {
 	let error = null;
 
 	const res = await apiFetch(`${WEBUI_API_BASE_URL}/auths/signup`, {
-		method: 'POST',
+		method: 'GET',
 		headers: {
 			'Content-Type': 'application/json'
 		},
-		credentials: 'include',
-		body: JSON.stringify({
-			name: name,
-			email: email,
-			password: password,
-			profile_image_url: profile_image_url
-		})
 	})
 		.then(async (res) => {
 			if (!res.ok) throw await res.json();
@@ -389,19 +376,14 @@ export const addUser = async (
 	return res;
 };
 
-export const updateUserProfile = async (token: string, name: string, profileImageUrl: string) => {
+export const updateUserProfile = async () => {
 	let error = null;
 
 	const res = await apiFetch(`${WEBUI_API_BASE_URL}/auths/update/profile`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
-			...(token && { authorization: `Bearer ${token}` })
 		},
-		body: JSON.stringify({
-			name: name,
-			profile_image_url: profileImageUrl
-		})
 	})
 		.then(async (res) => {
 			if (!res.ok) throw await res.json();
