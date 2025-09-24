@@ -7,7 +7,7 @@ from typing import Optional, Literal
 from fastapi.encoders import jsonable_encoder
 from starlette.websockets import WebSocket
 
-from wisp.protobuf.common_pb2 import RiskLevel
+from jms.wisp.protobuf.common_pb2 import RiskLevel
 
 
 class CommandRecord(BaseModel):

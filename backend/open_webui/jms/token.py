@@ -1,7 +1,7 @@
 import logging
-from wisp.protobuf import service_pb2
-from wisp.exceptions import WispError
-from wisp.protobuf.common_pb2 import TokenAuthInfo
+from jms.wisp.protobuf import service_pb2
+from jms.wisp.exceptions import WispError
+from jms.wisp.protobuf.common_pb2 import TokenAuthInfo
 from open_webui.env import SRC_LOG_LEVELS
 
 from .base import BaseWisp

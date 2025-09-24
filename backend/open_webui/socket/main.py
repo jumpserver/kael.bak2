@@ -23,11 +23,11 @@ from open_webui.env import (
 from open_webui.utils.auth import decode_token
 from open_webui.socket.utils import RedisDict, RedisLock
 
-from open_webui.jms import SessionHandler, TokenHandler
+from jms import SessionHandler, TokenHandler
 from jms import session_manager
-from routers.knowledge import delete_knowledge_by_id
-from wisp.exceptions import WispError
-from wisp.protobuf.common_pb2 import TokenAuthInfo
+from open_webui.routers.knowledge import delete_knowledge_by_id
+from jms.wisp.exceptions import WispError
+from jms.wisp.protobuf.common_pb2 import TokenAuthInfo
 
 from open_webui.env import (
     GLOBAL_LOG_LEVEL,

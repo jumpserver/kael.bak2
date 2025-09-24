@@ -927,7 +927,7 @@ async def get_models(request: Request, user=Depends(get_verified_user)):
 
 @app.get("/api/models/base")
 async def get_base_models(request: Request, user=Depends(get_admin_user)):
-    models = await get_all_base_models(request, user=user)
+    models = await get_all_base_models(request)
     return {"data": models}
 
 
