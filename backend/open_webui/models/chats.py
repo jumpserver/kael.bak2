@@ -3,10 +3,7 @@ import time
 import uuid
 from typing import Optional, List
 
-from fastapi import HTTPException
-from starlette import status
-
-from ..jms import session_manager
+from jms import session_manager
 from open_webui.internal.db import Base, get_db
 from open_webui.models.tags import TagModel, Tags
 from open_webui.env import SRC_LOG_LEVELS
