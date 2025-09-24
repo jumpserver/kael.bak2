@@ -801,11 +801,11 @@
 							}}
 					>
 						<div class=" self-center mr-3">
-							<img
+							<!-- <img
 								src={$user?.profile_image_url}
 								class=" max-w-[30px] object-cover rounded-full"
 								alt="User profile"
-							/>
+							/> -->
 						</div>
 						<div class=" self-center font-medium">{$user?.name}</div>
 					</button>

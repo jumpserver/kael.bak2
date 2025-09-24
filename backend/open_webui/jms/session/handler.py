@@ -25,7 +25,6 @@ class JMSSession(BaseWisp):
         self.sid = sid
         self.session = session
         self.history_asks = []
-        self.current_ask_interrupt = False
         self.command_acls = list(auth_info.filter_rules)
         self.expire_time = auth_info.expire_info.expire_at
         self.max_idle_time_delta = auth_info.setting.max_idle_time
@@ -72,43 +71,20 @@ class JMSSession(BaseWisp):
 
     async def close(self) -> None:
         from jms import session_manager
-        self.current_ask_interrupt = True
         await asyncio.sleep(1)
         await self.replay_handler.upload()
         await self.close_session()
         session_manager.unregister_jms_session(self)
-        await self.notify_to_close()
+        # await self.notify_to_close()
 
-    async def notify_to_close(self):
-        await reply(
-            self.websocket, AskResponse(
-                type=AskResponseType.finish,
-                conversation_id=self.session.id,
-                system_message='Session interrupted'
-            )
-        )
-
-    async def with_audit(self, command: str, chat_func):
-        command_record = CommandRecord(input=command)
-        self.command_handler.command_record = command_record
-        try:
-            is_continue = await self.command_handler.command_acl_filter()
-            asyncio.create_task(self.replay_handler.write_input(command_record.input))
-            if not is_continue:
-                return
-
-            result = await chat_func(self)
-            command_record.output = result
-            asyncio.create_task(self.replay_handler.write_output(command_record.output))
-            return result
-
-        except Exception as e:
-            error = str(e)
-            asyncio.create_task(self.replay_handler.write_output(error))
-            raise e
-
-        finally:
-            asyncio.create_task(self.command_handler.record_command())
+    # async def notify_to_close(self):
+    #     await reply(
+    #         self.websocket, AskResponse(
+    #             type=AskResponseType.finish,
+    #             conversation_id=self.session.id,
+    #             system_message='Session interrupted'
+    #         )
+    #     )
 
 
 class SessionHandler(BaseWisp):

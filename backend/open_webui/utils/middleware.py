@@ -670,9 +670,9 @@ async def process_chat_payload(request, form_data, user, metadata, model):
         "__event_call__": event_call,
         "__user__": {
             "id": user.id,
-            "email": user.email,
+            "username": user.username,
             "name": user.name,
-            "role": user.role,
+            "role": 'admin',
         },
         "__metadata__": metadata,
         "__request__": request,
@@ -1133,9 +1133,9 @@ async def process_chat_response(
         "__event_call__": event_caller,
         "__user__": {
             "id": user.id,
-            "email": user.email,
+            "username": user.username,
             "name": user.name,
-            "role": user.role,
+            "role": 'admin',
         },
         "__metadata__": metadata,
         "__request__": request,

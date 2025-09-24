@@ -1,9 +1,7 @@
-import time
 import logging
 import sys
 
-from aiocache import cached
-from typing import Any, Optional
+from typing import Any
 import random
 import json
 import inspect
@@ -30,7 +28,6 @@ from open_webui.routers.ollama import (
 )
 
 from open_webui.routers.pipelines import (
-    process_pipeline_inlet_filter,
     process_pipeline_outlet_filter,
 )
 
@@ -302,9 +299,9 @@ async def chat_completed(request: Request, form_data: dict, user: Any):
         "__event_call__": get_event_call(metadata),
         "__user__": {
             "id": user.id,
-            "email": user.email,
+            "username": user.username,
             "name": user.name,
-            "role": user.role,
+            "role": 'admin',
         },
         "__metadata__": metadata,
         "__request__": request,
@@ -408,9 +405,9 @@ async def chat_action(request: Request, action_id: str, form_data: dict, user: A
             if "__user__" in sig.parameters:
                 __user__ = {
                     "id": user.id,
-                    "email": user.email,
+                    "username": user.username,
                     "name": user.name,
-                    "role": user.role,
+                    "role": 'admin',
                 }
 
                 try:

@@ -44,7 +44,7 @@ from open_webui.utils.payload import (
     apply_model_params_to_body_openai,
     apply_model_system_prompt_to_body,
 )
-from open_webui.utils.auth import get_admin_user, get_verified_user
+from open_webui.utils.auth import get_verified_user, get_verified_user
 from open_webui.utils.access_control import has_access
 
 
@@ -157,7 +157,7 @@ async def send_post_request(
 
         raise HTTPException(
             status_code=r.status if r else 500,
-            detail=detail if detail else "Open WebUI: Server Connection Error",
+            detail=detail if detail else "JumpServer Chat: Server Connection Error",
         )
 
 
@@ -191,7 +191,7 @@ class ConnectionVerificationForm(BaseModel):
 
 @router.post("/verify")
 async def verify_connection(
-    form_data: ConnectionVerificationForm, user=Depends(get_admin_user)
+    form_data: ConnectionVerificationForm, user=Depends(get_verified_user)
 ):
     url = form_data.url
     key = form_data.key
@@ -220,7 +220,7 @@ async def verify_connection(
         except aiohttp.ClientError as e:
             log.exception(f"Client error: {str(e)}")
             raise HTTPException(
-                status_code=500, detail="Open WebUI: Server Connection Error"
+                status_code=500, detail="JumpServer Chat: Server Connection Error"
             )
         except Exception as e:
             log.exception(f"Unexpected error: {e}")
@@ -229,7 +229,7 @@ async def verify_connection(
 
 
 @router.get("/config")
-async def get_config(request: Request, user=Depends(get_admin_user)):
+async def get_config(request: Request, user=Depends(get_verified_user)):
     return {
         "ENABLE_OLLAMA_API": request.app.state.config.ENABLE_OLLAMA_API,
         "OLLAMA_BASE_URLS": request.app.state.config.OLLAMA_BASE_URLS,
@@ -245,7 +245,7 @@ class OllamaConfigForm(BaseModel):
 
 @router.post("/config/update")
 async def update_config(
-    request: Request, form_data: OllamaConfigForm, user=Depends(get_admin_user)
+    request: Request, form_data: OllamaConfigForm, user=Depends(get_verified_user)
 ):
     request.app.state.config.ENABLE_OLLAMA_API = form_data.ENABLE_OLLAMA_API
 
@@ -390,11 +390,8 @@ async def get_ollama_tags(
 
             raise HTTPException(
                 status_code=r.status_code if r else 500,
-                detail=detail if detail else "Open WebUI: Server Connection Error",
+                detail=detail if detail else "JumpServer Chat: Server Connection Error",
             )
-
-    if user.role == "user" and not BYPASS_MODEL_ACCESS_CONTROL:
-        models["models"] = await get_filtered_models(models, user)
 
     return models
 
@@ -466,7 +463,7 @@ async def get_ollama_versions(request: Request, url_idx: Optional[int] = None):
 
                 raise HTTPException(
                     status_code=r.status_code if r else 500,
-                    detail=detail if detail else "Open WebUI: Server Connection Error",
+                    detail=detail if detail else "JumpServer Chat: Server Connection Error",
                 )
     else:
         return {"version": False}
@@ -508,7 +505,7 @@ async def pull_model(
     request: Request,
     form_data: ModelNameForm,
     url_idx: int = 0,
-    user=Depends(get_admin_user),
+    user=Depends(get_verified_user),
 ):
     url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
     log.info(f"url: {url}")
@@ -535,7 +532,7 @@ async def push_model(
     request: Request,
     form_data: PushModelForm,
     url_idx: Optional[int] = None,
-    user=Depends(get_admin_user),
+    user=Depends(get_verified_user),
 ):
     if url_idx is None:
         await get_all_models(request)
@@ -573,7 +570,7 @@ async def create_model(
     request: Request,
     form_data: CreateModelForm,
     url_idx: int = 0,
-    user=Depends(get_admin_user),
+    user=Depends(get_verified_user),
 ):
     log.debug(f"form_data: {form_data}")
     url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
@@ -596,7 +593,7 @@ async def copy_model(
     request: Request,
     form_data: CopyModelForm,
     url_idx: Optional[int] = None,
-    user=Depends(get_admin_user),
+    user=Depends(get_verified_user),
 ):
     if url_idx is None:
         await get_all_models(request)
@@ -641,7 +638,7 @@ async def copy_model(
 
         raise HTTPException(
             status_code=r.status_code if r else 500,
-            detail=detail if detail else "Open WebUI: Server Connection Error",
+            detail=detail if detail else "JumpServer Chat: Server Connection Error",
         )
 
 
@@ -651,7 +648,7 @@ async def delete_model(
     request: Request,
     form_data: ModelNameForm,
     url_idx: Optional[int] = None,
-    user=Depends(get_admin_user),
+    user=Depends(get_verified_user),
 ):
     if url_idx is None:
         await get_all_models(request)
@@ -696,7 +693,7 @@ async def delete_model(
 
         raise HTTPException(
             status_code=r.status_code if r else 500,
-            detail=detail if detail else "Open WebUI: Server Connection Error",
+            detail=detail if detail else "JumpServer Chat: Server Connection Error",
         )
 
 
@@ -745,7 +742,7 @@ async def show_model_info(
 
         raise HTTPException(
             status_code=r.status_code if r else 500,
-            detail=detail if detail else "Open WebUI: Server Connection Error",
+            detail=detail if detail else "JumpServer Chat: Server Connection Error",
         )
 
 
@@ -815,7 +812,7 @@ async def embed(
 
         raise HTTPException(
             status_code=r.status_code if r else 500,
-            detail=detail if detail else "Open WebUI: Server Connection Error",
+            detail=detail if detail else "JumpServer Chat: Server Connection Error",
         )
 
 
@@ -884,7 +881,7 @@ async def embeddings(
 
         raise HTTPException(
             status_code=r.status_code if r else 500,
-            detail=detail if detail else "Open WebUI: Server Connection Error",
+            detail=detail if detail else "JumpServer Chat: Server Connection Error",
         )
 
 
@@ -1033,25 +1030,6 @@ async def generate_chat_completion(
             )
             payload = apply_model_system_prompt_to_body(params, payload, metadata, user)
 
-        # Check if user has access to the model
-        if not bypass_filter and user.role == "user":
-            if not (
-                user.id == model_info.user_id
-                or has_access(
-                    user.id, type="read", access_control=model_info.access_control
-                )
-            ):
-                raise HTTPException(
-                    status_code=403,
-                    detail="Model not found",
-                )
-    elif not bypass_filter:
-        if user.role != "admin":
-            raise HTTPException(
-                status_code=403,
-                detail="Model not found",
-            )
-
     if ":" not in payload["model"]:
         payload["model"] = f"{payload['model']}:latest"
 
@@ -1135,25 +1113,6 @@ async def generate_openai_completion(
         if params:
             payload = apply_model_params_to_body_openai(params, payload)
 
-        # Check if user has access to the model
-        if user.role == "user":
-            if not (
-                user.id == model_info.user_id
-                or has_access(
-                    user.id, type="read", access_control=model_info.access_control
-                )
-            ):
-                raise HTTPException(
-                    status_code=403,
-                    detail="Model not found",
-                )
-    else:
-        if user.role != "admin":
-            raise HTTPException(
-                status_code=403,
-                detail="Model not found",
-            )
-
     if ":" not in payload["model"]:
         payload["model"] = f"{payload['model']}:latest"
 
@@ -1213,25 +1172,6 @@ async def generate_openai_chat_completion(
         if params:
             payload = apply_model_params_to_body_openai(params, payload)
             payload = apply_model_system_prompt_to_body(params, payload, metadata, user)
-
-        # Check if user has access to the model
-        if user.role == "user":
-            if not (
-                user.id == model_info.user_id
-                or has_access(
-                    user.id, type="read", access_control=model_info.access_control
-                )
-            ):
-                raise HTTPException(
-                    status_code=403,
-                    detail="Model not found",
-                )
-    else:
-        if user.role != "admin":
-            raise HTTPException(
-                status_code=403,
-                detail="Model not found",
-            )
 
     if ":" not in payload["model"]:
         payload["model"] = f"{payload['model']}:latest"
@@ -1294,7 +1234,7 @@ async def get_openai_models(
             ]
         except Exception as e:
             log.exception(e)
-            error_detail = "Open WebUI: Server Connection Error"
+            error_detail = "JumpServer Chat: Server Connection Error"
             if r is not None:
                 try:
                     res = r.json()
@@ -1394,7 +1334,7 @@ async def download_model(
     request: Request,
     form_data: UrlForm,
     url_idx: Optional[int] = None,
-    user=Depends(get_admin_user),
+    user=Depends(get_verified_user),
 ):
     allowed_hosts = ["https://huggingface.co/", "https://github.com/"]
 
@@ -1427,7 +1367,7 @@ async def upload_model(
     request: Request,
     file: UploadFile = File(...),
     url_idx: Optional[int] = None,
-    user=Depends(get_admin_user),
+    user=Depends(get_verified_user),
 ):
     if url_idx is None:
         url_idx = 0

@@ -57,6 +57,9 @@
 	const BREAKPOINT = 768;
 
 	const setupSocket = async (enableWebsocket) => {
+
+		const params = new URLSearchParams(window.location.search);
+		const token = params.get("token");
 		const _socket = io(`${WEBUI_BASE_URL}` || undefined, {
 			reconnection: true,
 			reconnectionDelay: 1000,
@@ -64,7 +67,7 @@
 			randomizationFactor: 0.5,
 			path: '/ws/socket.io',
 			transports: enableWebsocket ? ['websocket'] : ['polling', 'websocket'],
-			auth: { token: localStorage.token }
+			auth: { token: token }
 		});
 
 		await socket.set(_socket);
@@ -534,28 +537,20 @@
 				const currentUrl = `${window.location.pathname}${window.location.search}`;
 				const encodedUrl = encodeURIComponent(currentUrl);
 
-				if (localStorage.token) {
-					// Get Session User Info
-					const sessionUser = await getSessionUser(localStorage.token).catch((error) => {
-						toast.error(`${error}`);
-						return null;
-					});
+				// Get Session User Info
+				const sessionUser = await getSessionUser().catch((error) => {
+					toast.error(`${error}`);
+					return null;
+				});
 
-					if (sessionUser) {
-						// Save Session User to Store
-						$socket.emit('user-join', { auth: { token: sessionUser.token } });
-						await user.set(sessionUser);
-					} else {
-						// Redirect Invalid Session User to /auth Page
-						localStorage.removeItem('token');
-						await goto(`/auth?redirect=${encodedUrl}`);
-					}
+				if (sessionUser) {
+					// Save Session User to Store
+					$socket.emit('user-join', { user: sessionUser });
+					await user.set(sessionUser);
 				} else {
-					// Don't redirect if we're already on the auth page
-					// Needed because we pass in tokens from OAuth logins via URL fragments
-					if ($page.url.pathname !== '/auth') {
-						await goto(`/auth?redirect=${encodedUrl}`);
-					}
+					// Redirect Invalid Session User to /auth Page
+					localStorage.removeItem('token');
+					await goto(`/auth?redirect=${encodedUrl}`);
 				}
 			}
 		} else {

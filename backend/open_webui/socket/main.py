@@ -25,9 +25,8 @@ from open_webui.socket.utils import RedisDict, RedisLock
 
 from jms import SessionHandler, TokenHandler
 from jms import session_manager
-from open_webui.routers.knowledge import delete_knowledge_by_id
-from jms.wisp.exceptions import WispError
-from jms.wisp.protobuf.common_pb2 import TokenAuthInfo
+from wisp.exceptions import WispError
+from wisp.protobuf.common_pb2 import TokenAuthInfo
 
 from open_webui.env import (
     GLOBAL_LOG_LEVEL,
@@ -189,55 +188,47 @@ async def create_auth_info(token: Optional[str] = None) -> TokenAuthInfo:
 @sio.event
 async def connect(sid, environ, auth):
     # auth_info = await create_auth_info(auth["token"])
-    auth_info = await create_auth_info('78771599-4b76-41b6-a569-15ebfeb51163')
+    token = auth["token"]
+    auth_info = await create_auth_info(token)
 
     scope = environ.get("asgi.scope", {})
     session_handler = SessionHandler(sio=sio, sid=sid, scope=scope, auth_info=auth_info)
 
     SID_SESSION_HANDLER[sid] = session_handler
 
-    user = None
-    if auth and "token" in auth:
+    user = auth_info.user
+    if user:
+        SESSION_POOL[sid] = {
+            "id": user.id,
+            "name": user.name,
+            "username": user.username,
+            "role": 'admin',
+        }
+        if user.id in USER_POOL:
+            USER_POOL[user.id] = USER_POOL[user.id] + [sid]
+        else:
+            USER_POOL[user.id] = [sid]
 
-        data = decode_token(auth["token"])
-
-        if data is not None and "id" in data:
-            user = Users.get_user_by_id(data["id"])
-
-        if user:
-            SESSION_POOL[sid] = user.model_dump()
-            if user.id in USER_POOL:
-                USER_POOL[user.id] = USER_POOL[user.id] + [sid]
-            else:
-                USER_POOL[user.id] = [sid]
-
-            # print(f"user {user.name}({user.id}) connected with session ID {sid}")
-            await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})
-            await sio.emit("usage", {"models": get_models_in_use()})
+        # print(f"user {user.name}({user.id}) connected with session ID {sid}")
+        await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})
+        await sio.emit("usage", {"models": get_models_in_use()})
 
 
 @sio.on("user-join")
 async def user_join(sid, data):
-    auth = data["auth"] if "auth" in data else None
-    if not auth or "token" not in auth:
-        return
-
-    data = decode_token(auth["token"])
-    if data is None or "id" not in data:
-        return
-
-    user = Users.get_user_by_id(data["id"])
+    user = data["user"]
     if not user:
         return
 
-    SESSION_POOL[sid] = user.model_dump()
-    if user.id in USER_POOL:
-        USER_POOL[user.id] = USER_POOL[user.id] + [sid]
+    user_id = user['id']
+    SESSION_POOL[sid] = user
+    if user_id in USER_POOL:
+        USER_POOL[user_id] = USER_POOL[user_id] + [sid]
     else:
-        USER_POOL[user.id] = [sid]
+        USER_POOL[user_id] = [sid]
 
     # Join all the channels
-    channels = Channels.get_channels_by_user_id(user.id)
+    channels = Channels.get_channels_by_user_id(user_id)
     log.debug(f"{channels=}")
     for channel in channels:
         await sio.enter_room(sid, f"channel:{channel.id}")
@@ -245,7 +236,7 @@ async def user_join(sid, data):
     # print(f"user {user.name}({user.id}) connected with session ID {sid}")
 
     await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})
-    return {"id": user.id, "name": user.name}
+    return {"id": user_id, "name": user['name']}
 
 
 @sio.on("join-channels")

@@ -11,11 +11,10 @@ from open_webui.models.groups import (
     GroupResponse,
 )
 
-from open_webui.config import CACHE_DIR
 from open_webui.constants import ERROR_MESSAGES
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from open_webui.utils.auth import get_admin_user, get_verified_user
+from open_webui.utils.auth import get_verified_user
 from open_webui.env import SRC_LOG_LEVELS
 
 
@@ -31,10 +30,7 @@ router = APIRouter()
 
 @router.get("/", response_model=list[GroupResponse])
 async def get_groups(user=Depends(get_verified_user)):
-    if user.role == "admin":
-        return Groups.get_groups()
-    else:
-        return Groups.get_groups_by_member_id(user.id)
+    return Groups.get_groups()
 
 
 ############################
@@ -43,7 +39,7 @@ async def get_groups(user=Depends(get_verified_user)):
 
 
 @router.post("/create", response_model=Optional[GroupResponse])
-async def create_new_group(form_data: GroupForm, user=Depends(get_admin_user)):
+async def create_new_group(form_data: GroupForm, user=Depends(get_verified_user)):
     try:
         group = Groups.insert_new_group(user.id, form_data)
         if group:
@@ -67,7 +63,7 @@ async def create_new_group(form_data: GroupForm, user=Depends(get_admin_user)):
 
 
 @router.get("/id/{id}", response_model=Optional[GroupResponse])
-async def get_group_by_id(id: str, user=Depends(get_admin_user)):
+async def get_group_by_id(id: str, user=Depends(get_verified_user)):
     group = Groups.get_group_by_id(id)
     if group:
         return group
@@ -85,7 +81,7 @@ async def get_group_by_id(id: str, user=Depends(get_admin_user)):
 
 @router.post("/id/{id}/update", response_model=Optional[GroupResponse])
 async def update_group_by_id(
-    id: str, form_data: GroupUpdateForm, user=Depends(get_admin_user)
+    id: str, form_data: GroupUpdateForm, user=Depends(get_verified_user)
 ):
     try:
         if form_data.user_ids:
@@ -113,7 +109,7 @@ async def update_group_by_id(
 
 
 @router.delete("/id/{id}/delete", response_model=bool)
-async def delete_group_by_id(id: str, user=Depends(get_admin_user)):
+async def delete_group_by_id(id: str, user=Depends(get_verified_user)):
     try:
         result = Groups.delete_group_by_id(id)
         if result:

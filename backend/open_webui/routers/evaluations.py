@@ -11,7 +11,7 @@ from open_webui.models.feedbacks import (
 )
 
 from open_webui.constants import ERROR_MESSAGES
-from open_webui.utils.auth import get_admin_user, get_verified_user
+from open_webui.utils.auth import get_verified_user, get_verified_user
 
 router = APIRouter()
 
@@ -22,7 +22,7 @@ router = APIRouter()
 
 
 @router.get("/config")
-async def get_config(request: Request, user=Depends(get_admin_user)):
+async def get_config(request: Request, user=Depends(get_verified_user)):
     return {
         "ENABLE_EVALUATION_ARENA_MODELS": request.app.state.config.ENABLE_EVALUATION_ARENA_MODELS,
         "EVALUATION_ARENA_MODELS": request.app.state.config.EVALUATION_ARENA_MODELS,
@@ -43,7 +43,7 @@ class UpdateConfigForm(BaseModel):
 async def update_config(
     request: Request,
     form_data: UpdateConfigForm,
-    user=Depends(get_admin_user),
+    user=Depends(get_verified_user),
 ):
     config = request.app.state.config
     if form_data.ENABLE_EVALUATION_ARENA_MODELS is not None:
@@ -72,7 +72,7 @@ class FeedbackUserResponse(FeedbackResponse):
 
 
 @router.get("/feedbacks/all", response_model=list[FeedbackUserResponse])
-async def get_all_feedbacks(user=Depends(get_admin_user)):
+async def get_all_feedbacks(user=Depends(get_verified_user)):
     feedbacks = Feedbacks.get_all_feedbacks()
     return [
         FeedbackUserResponse(
@@ -86,13 +86,13 @@ async def get_all_feedbacks(user=Depends(get_admin_user)):
 
 
 @router.delete("/feedbacks/all")
-async def delete_all_feedbacks(user=Depends(get_admin_user)):
+async def delete_all_feedbacks(user=Depends(get_verified_user)):
     success = Feedbacks.delete_all_feedbacks()
     return success
 
 
 @router.get("/feedbacks/all/export", response_model=list[FeedbackModel])
-async def get_all_feedbacks(user=Depends(get_admin_user)):
+async def get_all_feedbacks(user=Depends(get_verified_user)):
     feedbacks = Feedbacks.get_all_feedbacks()
     return [
         FeedbackModel(
@@ -160,10 +160,7 @@ async def update_feedback_by_id(
 
 @router.delete("/feedback/{id}")
 async def delete_feedback_by_id(id: str, user=Depends(get_verified_user)):
-    if user.role == "admin":
-        success = Feedbacks.delete_feedback_by_id(id=id)
-    else:
-        success = Feedbacks.delete_feedback_by_id_and_user_id(id=id, user_id=user.id)
+    success = Feedbacks.delete_feedback_by_id(id=id)
 
     if not success:
         raise HTTPException(

@@ -31,12 +31,11 @@ from open_webui.routers.knowledge import get_knowledge, get_knowledge_list
 from open_webui.routers.retrieval import ProcessFileForm, process_file
 from open_webui.routers.audio import transcribe
 from open_webui.storage.provider import Storage
-from open_webui.utils.auth import get_admin_user, get_verified_user
+from open_webui.utils.auth import get_verified_user
 from pydantic import BaseModel
 
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["MODELS"])
-
 
 router = APIRouter()
 
@@ -47,7 +46,7 @@ router = APIRouter()
 
 
 def has_access_to_file(
-    file_id: Optional[str], access_type: str, user=Depends(get_verified_user)
+        file_id: Optional[str], access_type: str, user=Depends(get_verified_user)
 ) -> bool:
     file = Files.get_file_by_id(file_id)
     log.debug(f"Checking if user has {access_type} access to file")
@@ -80,11 +79,11 @@ def has_access_to_file(
 
 @router.post("/", response_model=FileModelResponse)
 def upload_file(
-    request: Request,
-    file: UploadFile = File(...),
-    user=Depends(get_verified_user),
-    file_metadata: dict = {},
-    process: bool = Query(True),
+        request: Request,
+        file: UploadFile = File(...),
+        user=Depends(get_verified_user),
+        file_metadata: dict = {},
+        process: bool = Query(True),
 ):
     log.info(f"file.content_type: {file.content_type}")
     try:
@@ -166,10 +165,7 @@ def upload_file(
 
 @router.get("/", response_model=list[FileModelResponse])
 async def list_files(user=Depends(get_verified_user), content: bool = Query(True)):
-    if user.role == "admin":
-        files = Files.get_files()
-    else:
-        files = Files.get_files_by_user_id(user.id)
+    files = Files.get_files()
 
     if not content:
         for file in files:
@@ -185,21 +181,17 @@ async def list_files(user=Depends(get_verified_user), content: bool = Query(True
 
 @router.get("/search", response_model=list[FileModelResponse])
 async def search_files(
-    filename: str = Query(
-        ...,
-        description="Filename pattern to search for. Supports wildcards such as '*.txt'",
-    ),
-    content: bool = Query(True),
-    user=Depends(get_verified_user),
+        filename: str = Query(
+            ...,
+            description="Filename pattern to search for. Supports wildcards such as '*.txt'",
+        ),
+        content: bool = Query(True),
+        user=Depends(get_verified_user),
 ):
     """
     Search for files by filename with support for wildcard patterns.
     """
-    # Get files according to user role
-    if user.role == "admin":
-        files = Files.get_files()
-    else:
-        files = Files.get_files_by_user_id(user.id)
+    files = Files.get_files()
 
     # Get matching files
     matching_files = [
@@ -225,7 +217,7 @@ async def search_files(
 
 
 @router.delete("/all")
-async def delete_all_files(user=Depends(get_admin_user)):
+async def delete_all_files(user=Depends(get_verified_user)):
     result = Files.delete_all_files()
     if result:
         try:
@@ -260,17 +252,7 @@ async def get_file_by_id(id: str, user=Depends(get_verified_user)):
             detail=ERROR_MESSAGES.NOT_FOUND,
         )
 
-    if (
-        file.user_id == user.id
-        or user.role == "admin"
-        or has_access_to_file(id, "read", user)
-    ):
-        return file
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.NOT_FOUND,
-        )
+    return file
 
 
 ############################
@@ -288,18 +270,7 @@ async def get_file_data_content_by_id(id: str, user=Depends(get_verified_user)):
             detail=ERROR_MESSAGES.NOT_FOUND,
         )
 
-    if (
-        file.user_id == user.id
-        or user.role == "admin"
-        or has_access_to_file(id, "read", user)
-    ):
-        return {"content": file.data.get("content", "")}
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.NOT_FOUND,
-        )
-
+    return {"content": file.data.get("content", "")}
 
 ############################
 # Update File Data Content By Id
@@ -312,7 +283,7 @@ class ContentForm(BaseModel):
 
 @router.post("/{id}/data/content/update")
 async def update_file_data_content_by_id(
-    request: Request, id: str, form_data: ContentForm, user=Depends(get_verified_user)
+        request: Request, id: str, form_data: ContentForm, user=Depends(get_verified_user)
 ):
     file = Files.get_file_by_id(id)
 
@@ -322,28 +293,18 @@ async def update_file_data_content_by_id(
             detail=ERROR_MESSAGES.NOT_FOUND,
         )
 
-    if (
-        file.user_id == user.id
-        or user.role == "admin"
-        or has_access_to_file(id, "write", user)
-    ):
-        try:
-            process_file(
-                request,
-                ProcessFileForm(file_id=id, content=form_data.content),
-                user=user,
-            )
-            file = Files.get_file_by_id(id=id)
-        except Exception as e:
-            log.exception(e)
-            log.error(f"Error processing file: {file.id}")
-
-        return {"content": file.data.get("content", "")}
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.NOT_FOUND,
+    try:
+        process_file(
+            request,
+            ProcessFileForm(file_id=id, content=form_data.content),
+            user=user,
         )
+        file = Files.get_file_by_id(id=id)
+    except Exception as e:
+        log.exception(e)
+        log.error(f"Error processing file: {file.id}")
+
+    return {"content": file.data.get("content", "")}
 
 
 ############################
@@ -353,7 +314,7 @@ async def update_file_data_content_by_id(
 
 @router.get("/{id}/content")
 async def get_file_content_by_id(
-    id: str, user=Depends(get_verified_user), attachment: bool = Query(False)
+        id: str, user=Depends(get_verified_user), attachment: bool = Query(False)
 ):
     file = Files.get_file_by_id(id)
 
@@ -363,61 +324,51 @@ async def get_file_content_by_id(
             detail=ERROR_MESSAGES.NOT_FOUND,
         )
 
-    if (
-        file.user_id == user.id
-        or user.role == "admin"
-        or has_access_to_file(id, "read", user)
-    ):
-        try:
-            file_path = Storage.get_file(file.path)
-            file_path = Path(file_path)
+    try:
+        file_path = Storage.get_file(file.path)
+        file_path = Path(file_path)
 
-            # Check if the file already exists in the cache
-            if file_path.is_file():
-                # Handle Unicode filenames
-                filename = file.meta.get("name", file.filename)
-                encoded_filename = quote(filename)  # RFC5987 encoding
+        # Check if the file already exists in the cache
+        if file_path.is_file():
+            # Handle Unicode filenames
+            filename = file.meta.get("name", file.filename)
+            encoded_filename = quote(filename)  # RFC5987 encoding
 
-                content_type = file.meta.get("content_type")
-                filename = file.meta.get("name", file.filename)
-                encoded_filename = quote(filename)
-                headers = {}
+            content_type = file.meta.get("content_type")
+            filename = file.meta.get("name", file.filename)
+            encoded_filename = quote(filename)
+            headers = {}
 
-                if attachment:
+            if attachment:
+                headers["Content-Disposition"] = (
+                    f"attachment; filename*=UTF-8''{encoded_filename}"
+                )
+            else:
+                if content_type == "application/pdf" or filename.lower().endswith(
+                        ".pdf"
+                ):
+                    headers["Content-Disposition"] = (
+                        f"inline; filename*=UTF-8''{encoded_filename}"
+                    )
+                    content_type = "application/pdf"
+                elif content_type != "text/plain":
                     headers["Content-Disposition"] = (
                         f"attachment; filename*=UTF-8''{encoded_filename}"
                     )
-                else:
-                    if content_type == "application/pdf" or filename.lower().endswith(
-                        ".pdf"
-                    ):
-                        headers["Content-Disposition"] = (
-                            f"inline; filename*=UTF-8''{encoded_filename}"
-                        )
-                        content_type = "application/pdf"
-                    elif content_type != "text/plain":
-                        headers["Content-Disposition"] = (
-                            f"attachment; filename*=UTF-8''{encoded_filename}"
-                        )
 
-                return FileResponse(file_path, headers=headers, media_type=content_type)
+            return FileResponse(file_path, headers=headers, media_type=content_type)
 
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=ERROR_MESSAGES.NOT_FOUND,
-                )
-        except Exception as e:
-            log.exception(e)
-            log.error("Error getting file content")
+        else:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=ERROR_MESSAGES.DEFAULT("Error getting file content"),
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ERROR_MESSAGES.NOT_FOUND,
             )
-    else:
+    except Exception as e:
+        log.exception(e)
+        log.error("Error getting file content")
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.NOT_FOUND,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.DEFAULT("Error getting file content"),
         )
 
 
@@ -431,37 +382,26 @@ async def get_html_file_content_by_id(id: str, user=Depends(get_verified_user)):
             detail=ERROR_MESSAGES.NOT_FOUND,
         )
 
-    if (
-        file.user_id == user.id
-        or user.role == "admin"
-        or has_access_to_file(id, "read", user)
-    ):
-        try:
-            file_path = Storage.get_file(file.path)
-            file_path = Path(file_path)
+    try:
+        file_path = Storage.get_file(file.path)
+        file_path = Path(file_path)
 
-            # Check if the file already exists in the cache
-            if file_path.is_file():
-                log.info(f"file_path: {file_path}")
-                return FileResponse(file_path)
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=ERROR_MESSAGES.NOT_FOUND,
-                )
-        except Exception as e:
-            log.exception(e)
-            log.error("Error getting file content")
+        # Check if the file already exists in the cache
+        if file_path.is_file():
+            log.info(f"file_path: {file_path}")
+            return FileResponse(file_path)
+        else:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=ERROR_MESSAGES.DEFAULT("Error getting file content"),
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ERROR_MESSAGES.NOT_FOUND,
             )
-    else:
+    except Exception as e:
+        log.exception(e)
+        log.error("Error getting file content")
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.NOT_FOUND,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.DEFAULT("Error getting file content"),
         )
-
 
 @router.get("/{id}/content/{file_name}")
 async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
@@ -473,52 +413,41 @@ async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
             detail=ERROR_MESSAGES.NOT_FOUND,
         )
 
-    if (
-        file.user_id == user.id
-        or user.role == "admin"
-        or has_access_to_file(id, "read", user)
-    ):
-        file_path = file.path
+    file_path = file.path
 
-        # Handle Unicode filenames
-        filename = file.meta.get("name", file.filename)
-        encoded_filename = quote(filename)  # RFC5987 encoding
-        headers = {
-            "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
-        }
+    # Handle Unicode filenames
+    filename = file.meta.get("name", file.filename)
+    encoded_filename = quote(filename)  # RFC5987 encoding
+    headers = {
+        "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
+    }
 
-        if file_path:
-            file_path = Storage.get_file(file_path)
-            file_path = Path(file_path)
+    if file_path:
+        file_path = Storage.get_file(file_path)
+        file_path = Path(file_path)
 
-            # Check if the file already exists in the cache
-            if file_path.is_file():
-                return FileResponse(file_path, headers=headers)
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=ERROR_MESSAGES.NOT_FOUND,
-                )
+        # Check if the file already exists in the cache
+        if file_path.is_file():
+            return FileResponse(file_path, headers=headers)
         else:
-            # File path doesn’t exist, return the content as .txt if possible
-            file_content = file.content.get("content", "")
-            file_name = file.filename
-
-            # Create a generator that encodes the file content
-            def generator():
-                yield file_content.encode("utf-8")
-
-            return StreamingResponse(
-                generator(),
-                media_type="text/plain",
-                headers=headers,
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=ERROR_MESSAGES.NOT_FOUND,
             )
     else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.NOT_FOUND,
-        )
+        # File path doesn’t exist, return the content as .txt if possible
+        file_content = file.content.get("content", "")
+        file_name = file.filename
 
+        # Create a generator that encodes the file content
+        def generator():
+            yield file_content.encode("utf-8")
+
+        return StreamingResponse(
+            generator(),
+            media_type="text/plain",
+            headers=headers,
+        )
 
 ############################
 # Delete File By Id
@@ -535,32 +464,20 @@ async def delete_file_by_id(id: str, user=Depends(get_verified_user)):
             detail=ERROR_MESSAGES.NOT_FOUND,
         )
 
-    if (
-        file.user_id == user.id
-        or user.role == "admin"
-        or has_access_to_file(id, "write", user)
-    ):
-        # We should add Chroma cleanup here
-
-        result = Files.delete_file_by_id(id)
-        if result:
-            try:
-                Storage.delete_file(file.path)
-            except Exception as e:
-                log.exception(e)
-                log.error("Error deleting files")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=ERROR_MESSAGES.DEFAULT("Error deleting files"),
-                )
-            return {"message": "File deleted successfully"}
-        else:
+    result = Files.delete_file_by_id(id)
+    if result:
+        try:
+            Storage.delete_file(file.path)
+        except Exception as e:
+            log.exception(e)
+            log.error("Error deleting files")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=ERROR_MESSAGES.DEFAULT("Error deleting file"),
+                detail=ERROR_MESSAGES.DEFAULT("Error deleting files"),
             )
+        return {"message": "File deleted successfully"}
     else:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.NOT_FOUND,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ERROR_MESSAGES.DEFAULT("Error deleting file"),
         )
