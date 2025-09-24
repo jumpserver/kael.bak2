@@ -25,8 +25,8 @@ from open_webui.socket.utils import RedisDict, RedisLock
 
 from jms import SessionHandler, TokenHandler
 from jms import session_manager
-from wisp.exceptions import WispError
-from wisp.protobuf.common_pb2 import TokenAuthInfo
+from jms.wisp.exceptions import WispError
+from jms.wisp.protobuf.common_pb2 import TokenAuthInfo
 
 from open_webui.env import (
     GLOBAL_LOG_LEVEL,
