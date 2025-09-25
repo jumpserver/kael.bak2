@@ -5,6 +5,8 @@
 	import { onMount, getContext, tick, createEventDispatcher } from 'svelte';
 	import { blur, fade } from 'svelte/transition';
 
+	import ChatGPT from '$lib/components/icons/models/ChatGPT.svelte';
+
 	const dispatch = createEventDispatcher();
 
 	import { config, user, models as _models, temporaryChatEnabled } from '$lib/stores';
@@ -15,6 +17,7 @@
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import EyeSlash from '$lib/components/icons/EyeSlash.svelte';
 	import MessageInput from './MessageInput.svelte';
+	import ModelIcon from '../icons/models/ModelIcon.svelte';
 
 	const i18n = getContext('i18n');
 
@@ -86,6 +89,18 @@
 	$: models = selectedModels.map((id) => $_models.find((m) => m.id === id));
 
 	onMount(() => {});
+
+	let greetingKey = 'Good morning, {{name}}';
+	$: {
+		const hour = new Date().getHours();
+		if (hour < 12) {
+			greetingKey = 'Good morning, {{name}}';
+		} else if (hour < 18) {
+			greetingKey = 'Good afternoon, {{name}}';
+		} else {
+			greetingKey = 'Good evening, {{name}}';
+		}
+	}
 </script>
 
 <div class="m-auto w-full max-w-6xl px-2 @2xl:px-20 translate-y-6 py-24 text-center">
@@ -106,13 +121,15 @@
 	>
 		<div class="w-full flex flex-col justify-center items-center">
 			<div class="flex flex-row justify-center gap-3 @sm:gap-3.5 w-fit px-5">
-
-				<div class=" text-3xl @sm:text-4xl line-clamp-1" in:fade={{ duration: 100 }}>
-					{#if models[selectedModelIdx]?.name}
-						{models[selectedModelIdx]?.name}
-					{:else}
-						{$i18n.t('Hello, {{name}}', { name: $user?.name })}
-					{/if}
+				<div class="relative size-10 justify-center">
+					<div
+						class="shadow-stroke relative flex h-full items-center justify-center rounded-full bg-white dark:bg-presentation dark:text-white text-black dark:after:shadow-none"
+					>
+						<ModelIcon name={models[selectedModelIdx]?.name} className="size-10" />
+					</div>
+				</div>
+				<div class=" text-xl sm:text-4xl font-medium line-clamp-1" in:fade={{ duration: 100 }}>
+					{$i18n.t(greetingKey, { name: $user?.name })}
 				</div>
 			</div>
 

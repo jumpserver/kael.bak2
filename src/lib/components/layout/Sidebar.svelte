@@ -81,7 +81,7 @@
 	let newFolderId = null;
 
 	const initFolders = async () => {
-		return []
+		return [];
 		// const folderList = await getFolders(localStorage.token).catch((error) => {
 		// 	toast.error(`${error}`);
 		// 	return [];
@@ -483,38 +483,37 @@
         "
 	data-state={$showSidebar}
 >
-	<div class="sidebar-header h-header-height flex items-center justify-between px-2" style="height: 52px;">
+	<div class="sidebar-header h-header-height flex items-center justify-between px-2 h-[40px]">
 		<button
-				class=" cursor-pointer p-[7px] flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-900 transition"
-				on:click={async () => {
-					selectedChatId = null;
-					await goto('/');
-					const newChatButton = document.getElementById('new-chat-button');
-					setTimeout(() => {
-						newChatButton?.click();
-					}, 0);
-				}}
+			class=" cursor-pointer p-[7px] flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-900 transition"
+			on:click={async () => {
+				selectedChatId = null;
+				await goto('/');
+				const newChatButton = document.getElementById('new-chat-button');
+				setTimeout(() => {
+					newChatButton?.click();
+				}, 0);
+			}}
 		>
 			<PencilSquare className="size-5" strokeWidth="2" />
 		</button>
-	    <button
-				class=" cursor-pointer p-[7px] flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-900 transition"
-				on:click={() => {
-					showSidebar.set(!$showSidebar);
-				}}
-			>
-				<div class=" m-auto self-center">
-					<ToggleBar className="size-5" strokeWidth="2" />
-				</div>
-			</button>
+		<button
+			class=" cursor-pointer p-[7px] flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-900 transition"
+			on:click={() => {
+				showSidebar.set(!$showSidebar);
+			}}
+		>
+			<div class=" m-auto self-center">
+				<ToggleBar className="size-5" strokeWidth="2" />
+			</div>
+		</button>
 	</div>
 	<div
 		class="siderbar-content py-2 my-auto flex flex-col justify-between max-h-[100dvh] w-[260px] overflow-x-hidden z-50 {$showSidebar
 			? ''
 			: 'invisible'}"
 	>
-		<div class="px-1.5 flex gap-1.5 space-x-1 text-gray-600 dark:text-gray-400">
-		</div>
+		<div class="px-1.5 flex gap-1.5 space-x-1 text-gray-600 dark:text-gray-400"></div>
 		<div class="relative {$temporaryChatEnabled ? 'opacity-20' : ''}">
 			{#if $temporaryChatEnabled}
 				<div class="absolute z-40 w-full h-full flex justify-center"></div>
@@ -565,7 +564,7 @@
 				className="px-2 mt-0.5"
 				name={$i18n.t('Chats')}
 				onAdd={() => {
-					createFolder();
+					// createFolder();
 				}}
 				onAddLabel={$i18n.t('New Folder')}
 				on:import={(e) => {
@@ -628,7 +627,6 @@
 							bind:open={showPinnedChat}
 							on:change={(e) => {
 								localStorage.setItem('showPinnedChat', e.detail);
-								console.log(e.detail);
 							}}
 							on:import={(e) => {
 								importChatHandler(e.detail, true);
@@ -645,7 +643,6 @@
 									}
 
 									if (chat) {
-										console.log(chat);
 										if (chat.folder_id) {
 											const res = await updateChatFolderIdById(
 												localStorage.token,
@@ -668,7 +665,8 @@
 							name={$i18n.t('Pinned')}
 						>
 							<div
-								class="ml-3 pl-1 mt-[1px] flex flex-col overflow-y-auto scrollbar-hidden border-s border-gray-100 dark:border-gray-900"
+								class="ml-3 pl-1 mt-[1px] flex flex-col overflow-y-auto scrollbar-hidden
+								border-s border-gray-100 dark:border-gray-900"
 							>
 								{#each $pinnedChats as chat, idx}
 									<ChatItem
@@ -776,30 +774,28 @@
 				</div>
 			</Folder>
 		</div>
-
-		
 	</div>
 	<div class="px-2">
-			<div class="flex flex-col font-primary">
-				{#if $user !== undefined && $user !== null}
-					<button
-						class=" flex items-center rounded-xl py-2.5 px-2.5 w-full hover:bg-gray-100 dark:hover:bg-gray-900 transition"
-						on:click={() => {
-								showDropdown = !showDropdown;
-							}}
-					>
-						<div class=" self-center mr-3">
-							<!-- <img
-								src={$user?.profile_image_url}
-								class=" max-w-[30px] object-cover rounded-full"
-								alt="User profile"
-							/> -->
-						</div>
-						<div class=" self-center font-medium">{$user?.name}</div>
-					</button>
-				{/if}
-			</div>
+		<div class="flex flex-col font-primary">
+			{#if $user !== undefined && $user !== null}
+				<button
+					class=" flex items-center rounded-xl py-2.5 px-2.5 w-full hover:bg-gray-100 dark:hover:bg-gray-900 transition"
+					on:click={() => {
+						showDropdown = !showDropdown;
+					}}
+				>
+					<div class=" self-center mr-3">
+						<img
+							src="/user.png"
+							class=" max-w-[30px] object-cover rounded-full"
+							alt="User profile"
+						/>
+					</div>
+					<div class=" self-center font-medium">{$user?.name}</div>
+				</button>
+			{/if}
 		</div>
+	</div>
 </div>
 
 <style>
@@ -816,6 +812,6 @@
 		min-height: 36px;
 	}
 	.siderbar-content {
-		height: calc(100dvh - 106px);
+		height: calc(100dvh - 96px);
 	}
 </style>

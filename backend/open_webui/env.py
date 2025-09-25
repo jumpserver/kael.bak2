@@ -23,7 +23,9 @@ BASE_DIR = BACKEND_DIR.parent  # the path containing the backend/
 try:
     from dotenv import find_dotenv, load_dotenv
 
-    load_dotenv(find_dotenv(str(BASE_DIR / ".env")))
+    path = os.path.join(BASE_DIR, ".env")
+    print('Load env from: ', path)
+    load_dotenv(find_dotenv(str(path)))
 except ImportError:
     print("dotenv not installed, skipping...")
 
