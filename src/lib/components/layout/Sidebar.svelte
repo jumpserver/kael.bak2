@@ -59,6 +59,7 @@
 	import PencilSquare from '../icons/PencilSquare.svelte';
 	import ToggleBar from '../icons/ToggleBar.svelte';
 	import Home from '../icons/Home.svelte';
+	import { generateInitialsImage } from '$lib/utils';
 
 	const BREAKPOINT = 768;
 
@@ -560,224 +561,224 @@
 				</Folder>
 			{/if}
 
-			<Folder
-				collapsible={!search}
-				className="px-2 mt-0.5"
-				name={$i18n.t('Chats')}
-				onAdd={() => {
-					createFolder();
-				}}
-				onAddLabel={$i18n.t('New Folder')}
-				on:import={(e) => {
-					importChatHandler(e.detail);
-				}}
-				on:drop={async (e) => {
-					const { type, id, item } = e.detail;
+<!--			<Folder-->
+<!--				collapsible={!search}-->
+<!--				className="px-2 mt-0.5"-->
+<!--				name={$i18n.t('Chats')}-->
+<!--				onAdd={() => {-->
+<!--					createFolder();-->
+<!--				}}-->
+<!--				onAddLabel={$i18n.t('New Folder')}-->
+<!--				on:import={(e) => {-->
+<!--					importChatHandler(e.detail);-->
+<!--				}}-->
+<!--				on:drop={async (e) => {-->
+<!--					const { type, id, item } = e.detail;-->
 
-					if (type === 'chat') {
-						let chat = await getChatById(localStorage.token, id).catch((error) => {
-							return null;
-						});
-						if (!chat && item) {
-							chat = await importChat(localStorage.token, item.chat, item?.meta ?? {});
-						}
+<!--					if (type === 'chat') {-->
+<!--						let chat = await getChatById(localStorage.token, id).catch((error) => {-->
+<!--							return null;-->
+<!--						});-->
+<!--						if (!chat && item) {-->
+<!--							chat = await importChat(localStorage.token, item.chat, item?.meta ?? {});-->
+<!--						}-->
 
-						if (chat) {
-							console.log(chat);
-							if (chat.folder_id) {
-								const res = await updateChatFolderIdById(localStorage.token, chat.id, null).catch(
-									(error) => {
-										toast.error(`${error}`);
-										return null;
-									}
-								);
-							}
+<!--						if (chat) {-->
+<!--							console.log(chat);-->
+<!--							if (chat.folder_id) {-->
+<!--								const res = await updateChatFolderIdById(localStorage.token, chat.id, null).catch(-->
+<!--									(error) => {-->
+<!--										toast.error(`${error}`);-->
+<!--										return null;-->
+<!--									}-->
+<!--								);-->
+<!--							}-->
 
-							if (chat.pinned) {
-								const res = await toggleChatPinnedStatusById(localStorage.token, chat.id);
-							}
+<!--							if (chat.pinned) {-->
+<!--								const res = await toggleChatPinnedStatusById(localStorage.token, chat.id);-->
+<!--							}-->
 
-							initChatList();
-						}
-					} else if (type === 'folder') {
-						if (folders[id].parent_id === null) {
-							return;
-						}
+<!--							initChatList();-->
+<!--						}-->
+<!--					} else if (type === 'folder') {-->
+<!--						if (folders[id].parent_id === null) {-->
+<!--							return;-->
+<!--						}-->
 
-						const res = await updateFolderParentIdById(localStorage.token, id, null).catch(
-							(error) => {
-								toast.error(`${error}`);
-								return null;
-							}
-						);
+<!--						const res = await updateFolderParentIdById(localStorage.token, id, null).catch(-->
+<!--							(error) => {-->
+<!--								toast.error(`${error}`);-->
+<!--								return null;-->
+<!--							}-->
+<!--						);-->
 
-						if (res) {
-							await initFolders();
-						}
-					}
-				}}
-			>
-				{#if $temporaryChatEnabled}
-					<div class="absolute z-40 w-full h-full flex justify-center"></div>
-				{/if}
+<!--						if (res) {-->
+<!--							await initFolders();-->
+<!--						}-->
+<!--					}-->
+<!--				}}-->
+<!--			>-->
+<!--				{#if $temporaryChatEnabled}-->
+<!--					<div class="absolute z-40 w-full h-full flex justify-center"></div>-->
+<!--				{/if}-->
 
-				{#if !search && $pinnedChats.length > 0}
-					<div class="flex flex-col space-y-1 rounded-xl">
-						<Folder
-							className=""
-							bind:open={showPinnedChat}
-							on:change={(e) => {
-								localStorage.setItem('showPinnedChat', e.detail);
-								console.log(e.detail);
-							}}
-							on:import={(e) => {
-								importChatHandler(e.detail, true);
-							}}
-							on:drop={async (e) => {
-								const { type, id, item } = e.detail;
+<!--				{#if !search && $pinnedChats.length > 0}-->
+<!--					<div class="flex flex-col space-y-1 rounded-xl">-->
+<!--						<Folder-->
+<!--							className=""-->
+<!--							bind:open={showPinnedChat}-->
+<!--							on:change={(e) => {-->
+<!--								localStorage.setItem('showPinnedChat', e.detail);-->
+<!--								console.log(e.detail);-->
+<!--							}}-->
+<!--							on:import={(e) => {-->
+<!--								importChatHandler(e.detail, true);-->
+<!--							}}-->
+<!--							on:drop={async (e) => {-->
+<!--								const { type, id, item } = e.detail;-->
 
-								if (type === 'chat') {
-									let chat = await getChatById(localStorage.token, id).catch((error) => {
-										return null;
-									});
-									if (!chat && item) {
-										chat = await importChat(localStorage.token, item.chat, item?.meta ?? {});
-									}
+<!--								if (type === 'chat') {-->
+<!--									let chat = await getChatById(localStorage.token, id).catch((error) => {-->
+<!--										return null;-->
+<!--									});-->
+<!--									if (!chat && item) {-->
+<!--										chat = await importChat(localStorage.token, item.chat, item?.meta ?? {});-->
+<!--									}-->
 
-									if (chat) {
-										console.log(chat);
-										if (chat.folder_id) {
-											const res = await updateChatFolderIdById(
-												localStorage.token,
-												chat.id,
-												null
-											).catch((error) => {
-												toast.error(`${error}`);
-												return null;
-											});
-										}
+<!--									if (chat) {-->
+<!--										console.log(chat);-->
+<!--										if (chat.folder_id) {-->
+<!--											const res = await updateChatFolderIdById(-->
+<!--												localStorage.token,-->
+<!--												chat.id,-->
+<!--												null-->
+<!--											).catch((error) => {-->
+<!--												toast.error(`${error}`);-->
+<!--												return null;-->
+<!--											});-->
+<!--										}-->
 
-										if (!chat.pinned) {
-											const res = await toggleChatPinnedStatusById(localStorage.token, chat.id);
-										}
+<!--										if (!chat.pinned) {-->
+<!--											const res = await toggleChatPinnedStatusById(localStorage.token, chat.id);-->
+<!--										}-->
 
-										initChatList();
-									}
-								}
-							}}
-							name={$i18n.t('Pinned')}
-						>
-							<div
-								class="ml-3 pl-1 mt-[1px] flex flex-col overflow-y-auto scrollbar-hidden border-s border-gray-100 dark:border-gray-900"
-							>
-								{#each $pinnedChats as chat, idx}
-									<ChatItem
-										className=""
-										id={chat.id}
-										title={chat.title}
-										{shiftKey}
-										selected={selectedChatId === chat.id}
-										on:select={() => {
-											selectedChatId = chat.id;
-										}}
-										on:unselect={() => {
-											selectedChatId = null;
-										}}
-										on:change={async () => {
-											initChatList();
-										}}
-										on:tag={(e) => {
-											const { type, name } = e.detail;
-											tagEventHandler(type, name, chat.id);
-										}}
-									/>
-								{/each}
-							</div>
-						</Folder>
-					</div>
-				{/if}
+<!--										initChatList();-->
+<!--									}-->
+<!--								}-->
+<!--							}}-->
+<!--							name={$i18n.t('Pinned')}-->
+<!--						>-->
+<!--							<div-->
+<!--								class="ml-3 pl-1 mt-[1px] flex flex-col overflow-y-auto scrollbar-hidden border-s border-gray-100 dark:border-gray-900"-->
+<!--							>-->
+<!--								{#each $pinnedChats as chat, idx}-->
+<!--									<ChatItem-->
+<!--										className=""-->
+<!--										id={chat.id}-->
+<!--										title={chat.title}-->
+<!--										{shiftKey}-->
+<!--										selected={selectedChatId === chat.id}-->
+<!--										on:select={() => {-->
+<!--											selectedChatId = chat.id;-->
+<!--										}}-->
+<!--										on:unselect={() => {-->
+<!--											selectedChatId = null;-->
+<!--										}}-->
+<!--										on:change={async () => {-->
+<!--											initChatList();-->
+<!--										}}-->
+<!--										on:tag={(e) => {-->
+<!--											const { type, name } = e.detail;-->
+<!--											tagEventHandler(type, name, chat.id);-->
+<!--										}}-->
+<!--									/>-->
+<!--								{/each}-->
+<!--							</div>-->
+<!--						</Folder>-->
+<!--					</div>-->
+<!--				{/if}-->
 
-				{#if !search && folders}
-					<Folders
-						{folders}
-						on:import={(e) => {
-							const { folderId, items } = e.detail;
-							importChatHandler(items, false, folderId);
-						}}
-						on:update={async (e) => {
-							initChatList();
-						}}
-						on:change={async () => {
-							initChatList();
-						}}
-					/>
-				{/if}
+<!--				{#if !search && folders}-->
+<!--					<Folders-->
+<!--						{folders}-->
+<!--						on:import={(e) => {-->
+<!--							const { folderId, items } = e.detail;-->
+<!--							importChatHandler(items, false, folderId);-->
+<!--						}}-->
+<!--						on:update={async (e) => {-->
+<!--							initChatList();-->
+<!--						}}-->
+<!--						on:change={async () => {-->
+<!--							initChatList();-->
+<!--						}}-->
+<!--					/>-->
+<!--				{/if}-->
 
-				<div class=" flex-1 flex flex-col overflow-y-auto scrollbar-hidden">
-					<div class="pt-1.5">
-						{#if $chats}
-							{#each $chats as chat, idx}
-								{#if idx === 0 || (idx > 0 && chat.time_range !== $chats[idx - 1].time_range)}
-									<div
-										class="w-full pl-2.5 text-xs text-gray-500 dark:text-gray-500 font-medium {idx ===
-										0
-											? ''
-											: 'pt-5'} pb-1.5"
-									>
-										{$i18n.t(chat.time_range)}
-									</div>
-								{/if}
+<!--				<div class=" flex-1 flex flex-col overflow-y-auto scrollbar-hidden">-->
+<!--					<div class="pt-1.5">-->
+<!--						{#if $chats}-->
+<!--							{#each $chats as chat, idx}-->
+<!--								{#if idx === 0 || (idx > 0 && chat.time_range !== $chats[idx - 1].time_range)}-->
+<!--									<div-->
+<!--										class="w-full pl-2.5 text-xs text-gray-500 dark:text-gray-500 font-medium {idx ===-->
+<!--										0-->
+<!--											? ''-->
+<!--											: 'pt-5'} pb-1.5"-->
+<!--									>-->
+<!--										{$i18n.t(chat.time_range)}-->
+<!--									</div>-->
+<!--								{/if}-->
 
-								<ChatItem
-									className=""
-									id={chat.id}
-									title={chat.title}
-									{shiftKey}
-									selected={selectedChatId === chat.id}
-									on:select={() => {
-										selectedChatId = chat.id;
-									}}
-									on:unselect={() => {
-										selectedChatId = null;
-									}}
-									on:change={async () => {
-										initChatList();
-									}}
-									on:tag={(e) => {
-										const { type, name } = e.detail;
-										tagEventHandler(type, name, chat.id);
-									}}
-								/>
-							{/each}
+<!--								<ChatItem-->
+<!--									className=""-->
+<!--									id={chat.id}-->
+<!--									title={chat.title}-->
+<!--									{shiftKey}-->
+<!--									selected={selectedChatId === chat.id}-->
+<!--									on:select={() => {-->
+<!--										selectedChatId = chat.id;-->
+<!--									}}-->
+<!--									on:unselect={() => {-->
+<!--										selectedChatId = null;-->
+<!--									}}-->
+<!--									on:change={async () => {-->
+<!--										initChatList();-->
+<!--									}}-->
+<!--									on:tag={(e) => {-->
+<!--										const { type, name } = e.detail;-->
+<!--										tagEventHandler(type, name, chat.id);-->
+<!--									}}-->
+<!--								/>-->
+<!--							{/each}-->
 
-							{#if $scrollPaginationEnabled && !allChatsLoaded}
-								<Loader
-									on:visible={(e) => {
-										if (!chatListLoading) {
-											loadMoreChats();
-										}
-									}}
-								>
-									<div
-										class="w-full flex justify-center py-1 text-xs animate-pulse items-center gap-2"
-									>
-										<Spinner className=" size-4" />
-										<div class=" ">Loading...</div>
-									</div>
-								</Loader>
-							{/if}
-						{:else}
-							<div class="w-full flex justify-center py-1 text-xs animate-pulse items-center gap-2">
-								<Spinner className=" size-4" />
-								<div class=" ">Loading...</div>
-							</div>
-						{/if}
-					</div>
-				</div>
-			</Folder>
+<!--							{#if $scrollPaginationEnabled && !allChatsLoaded}-->
+<!--								<Loader-->
+<!--									on:visible={(e) => {-->
+<!--										if (!chatListLoading) {-->
+<!--											loadMoreChats();-->
+<!--										}-->
+<!--									}}-->
+<!--								>-->
+<!--									<div-->
+<!--										class="w-full flex justify-center py-1 text-xs animate-pulse items-center gap-2"-->
+<!--									>-->
+<!--										<Spinner className=" size-4" />-->
+<!--										<div class=" ">Loading...</div>-->
+<!--									</div>-->
+<!--								</Loader>-->
+<!--							{/if}-->
+<!--						{:else}-->
+<!--							<div class="w-full flex justify-center py-1 text-xs animate-pulse items-center gap-2">-->
+<!--								<Spinner className=" size-4" />-->
+<!--								<div class=" ">Loading...</div>-->
+<!--							</div>-->
+<!--						{/if}-->
+<!--					</div>-->
+<!--				</div>-->
+<!--			</Folder>-->
 		</div>
 
-		
+
 	</div>
 	<div class="px-2">
 			<div class="flex flex-col font-primary">
@@ -789,11 +790,11 @@
 							}}
 					>
 						<div class=" self-center mr-3">
-							<!-- <img
-								src={$user?.profile_image_url}
+							<img
+								src={generateInitialsImage($user?.name)}
 								class=" max-w-[30px] object-cover rounded-full"
 								alt="User profile"
-							/> -->
+							/>
 						</div>
 						<div class=" self-center font-medium">{$user?.name}</div>
 					</button>
