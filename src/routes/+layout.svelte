@@ -41,6 +41,7 @@
 	import 'tippy.js/dist/tippy.css';
 
 	import { WEBUI_BASE_URL } from '$lib/constants';
+	import { base } from '$app/paths';
 	import i18n, { initI18n, getLanguages, changeLanguage } from '$lib/i18n';
 	import { bestMatchingLanguage } from '$lib/utils';
 	import { getAllTags, getChatList } from '$lib/apis/chats';
@@ -57,15 +58,14 @@
 	const BREAKPOINT = 768;
 
 	const setupSocket = async (enableWebsocket) => {
-
 		const params = new URLSearchParams(window.location.search);
-		const token = params.get("token");
+		const token = params.get('token');
 		const _socket = io(`${WEBUI_BASE_URL}` || undefined, {
 			reconnection: true,
 			reconnectionDelay: 1000,
 			reconnectionDelayMax: 5000,
 			randomizationFactor: 0.5,
-			path: '/ws/socket.io',
+			path: `${base}/ws/socket.io`,
 			transports: enableWebsocket ? ['websocket'] : ['polling', 'websocket'],
 			auth: { token: token }
 		});
@@ -576,7 +576,7 @@
 
 			document.getElementById('splash-screen')?.remove();
 
-			const audio = new Audio(`/audio/greeting.mp3`);
+			const audio = new Audio(`${WEBUI_BASE_URL}/audio/greeting.mp3`);
 			const playAudio = () => {
 				audio.play();
 				document.removeEventListener('click', playAudio);

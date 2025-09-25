@@ -1,17 +1,33 @@
 import { browser, dev } from '$app/environment';
+import { base } from '$app/paths';
+import { PUBLIC_BASE_PATH } from '$env/static/public';
 // import { version } from '../../package.json';
 
 export const APP_NAME = 'JumpServer Chat';
 
 export const WEBUI_HOSTNAME = browser ? (dev ? '' : ``) : '';
-export const WEBUI_BASE_URL = browser ? (dev ? '' : ``) : ``;
-export const WEBUI_API_BASE_URL = `${WEBUI_BASE_URL}/api/v1`;
 
-export const OLLAMA_API_BASE_URL = `${WEBUI_BASE_URL}/ollama`;
-export const OPENAI_API_BASE_URL = `${WEBUI_BASE_URL}/openai`;
-export const AUDIO_API_BASE_URL = `${WEBUI_BASE_URL}/api/v1/audio`;
-export const IMAGES_API_BASE_URL = `${WEBUI_BASE_URL}/api/v1/images`;
-export const RETRIEVAL_API_BASE_URL = `${WEBUI_BASE_URL}/api/v1/retrieval`;
+const sanitizeBasePath = (value?: string) => {
+	if (!value) return '';
+	const trimmed = value.trim();
+	if (!trimmed || trimmed === '/') return '';
+	const stripped = trimmed.replace(/^\/+/, '').replace(/\/+$/, '');
+	return stripped ? `/${stripped}` : '';
+};
+
+const configuredBase = sanitizeBasePath(base);
+const envBase = sanitizeBasePath(PUBLIC_BASE_PATH);
+const resolvedBase = configuredBase || envBase;
+const withBase = (suffix: string) => `${resolvedBase}${suffix}`;
+
+export const WEBUI_BASE_URL = resolvedBase;
+export const WEBUI_API_BASE_URL = withBase('/api/v1');
+
+export const OLLAMA_API_BASE_URL = withBase('/ollama');
+export const OPENAI_API_BASE_URL = withBase('/openai');
+export const AUDIO_API_BASE_URL = withBase('/api/v1/audio');
+export const IMAGES_API_BASE_URL = withBase('/api/v1/images');
+export const RETRIEVAL_API_BASE_URL = withBase('/api/v1/retrieval');
 
 export const WEBUI_VERSION = APP_VERSION;
 export const WEBUI_BUILD_HASH = APP_BUILD_HASH;

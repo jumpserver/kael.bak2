@@ -205,7 +205,18 @@
 
 		// once the bottom of the list has been reached (no results) there is no need to continue querying
 		allChatsLoaded = newChatList.length === 0;
-		await chats.set([...($chats ? $chats : []), ...newChatList]);
+		const fakeChats = [];
+		let i = 0;
+		while (i < 100) {
+			fakeChats.push({
+				id: uuidv4(),
+				title: `Fake Chat ${i}`,
+				timestamp: Date.now(),
+				folder_id: null
+			});
+			i++;
+		}
+		await chats.set([...($chats ? $chats : []), ...fakeChats]);
 
 		chatListLoading = false;
 	};
@@ -564,10 +575,6 @@
 				collapsible={!search}
 				className="px-2 mt-0.5"
 				name={$i18n.t('Chats')}
-				onAdd={() => {
-					// createFolder();
-				}}
-				onAddLabel={$i18n.t('New Folder')}
 				on:import={(e) => {
 					importChatHandler(e.detail);
 				}}
@@ -620,7 +627,6 @@
 				{#if $temporaryChatEnabled}
 					<div class="absolute z-40 w-full h-full flex justify-center"></div>
 				{/if}
-
 				{#if !search && $pinnedChats.length > 0}
 					<div class="flex flex-col space-y-1 rounded-xl">
 						<Folder
@@ -711,7 +717,6 @@
 						}}
 					/>
 				{/if}
-
 				<div class=" flex-1 flex flex-col overflow-y-auto scrollbar-hidden">
 					<div class="pt-1.5">
 						{#if $chats}
@@ -777,26 +782,26 @@
 		</div>
 	</div>
 	<div class="px-2">
-			<div class="flex flex-col font-primary">
-				{#if $user !== undefined && $user !== null}
-					<button
-						class=" flex items-center rounded-xl py-2.5 px-2.5 w-full hover:bg-gray-100 dark:hover:bg-gray-900 transition"
-						on:click={() => {
-								showDropdown = !showDropdown;
-							}}
-					>
-						<div class=" self-center mr-3">
-							<img
-                            								src={generateInitialsImage($user?.name)}
-                            								class=" max-w-[30px] object-cover rounded-full"
-                            								alt="User profile"
-                            							/>
-						</div>
-						<div class=" self-center font-medium">{$user?.name}</div>
-					</button>
-				{/if}
-			</div>
+		<div class="flex flex-col font-primary">
+			{#if $user !== undefined && $user !== null}
+				<button
+					class=" flex items-center rounded-xl py-2.5 px-2.5 w-full hover:bg-gray-100 dark:hover:bg-gray-900 transition"
+					on:click={() => {
+						showDropdown = !showDropdown;
+					}}
+				>
+					<div class=" self-center mr-3">
+						<img
+							src={generateInitialsImage($user?.name)}
+							class=" max-w-[30px] object-cover rounded-full"
+							alt="User profile"
+						/>
+					</div>
+					<div class=" self-center font-medium">{$user?.name}</div>
+				</button>
+			{/if}
 		</div>
+	</div>
 </div>
 
 <style>

@@ -375,15 +375,80 @@ async def lifespan(app: FastAPI):
     yield
 
 
+# Allow serving the app under a base URL prefix, e.g., "/kael"
+WEBUI_BASE_PATH = os.environ.get("WEBUI_BASE_PATH", "/kael").strip()
+if WEBUI_BASE_PATH and WEBUI_BASE_PATH != "/":
+    if not WEBUI_BASE_PATH.startswith("/"):
+        WEBUI_BASE_PATH = "/" + WEBUI_BASE_PATH
+    if WEBUI_BASE_PATH.endswith("/"):
+        WEBUI_BASE_PATH = WEBUI_BASE_PATH[:-1]
+else:
+    # empty or "/" treated as no base path
+    WEBUI_BASE_PATH = ""
+
+
+class BasePathMiddleware:
+    def __init__(self, app, base_path: str):
+        self.app = app
+        self.base_path = base_path
+
+    async def __call__(self, scope, receive, send):
+        scope_type = scope.get("type")
+        if not self.base_path or scope_type not in {"http", "websocket"}:
+            await self.app(scope, receive, send)
+            return
+
+        path = scope.get("path", "")
+        existing_root_path = scope.get("root_path", "") or ""
+        if existing_root_path.rstrip("/") == self.base_path:
+            await self.app(scope, receive, send)
+            return
+
+        if path.startswith(self.base_path):
+            new_scope = scope.copy()
+            trimmed = path[len(self.base_path) :] or "/"
+            new_scope["path"] = trimmed
+            if "raw_path" in scope:
+                new_scope["raw_path"] = trimmed.encode("utf-8")
+            if existing_root_path.endswith("/"):
+                existing_root_path = existing_root_path[:-1]
+            new_scope["root_path"] = f"{existing_root_path}{self.base_path}" or "/"
+            await self.app(new_scope, receive, send)
+            return
+
+        if path + "/" == self.base_path:
+            new_scope = scope.copy()
+            new_scope["path"] = "/"
+            if "raw_path" in scope:
+                new_scope["raw_path"] = b"/"
+            if existing_root_path.endswith("/"):
+                existing_root_path = existing_root_path[:-1]
+            new_scope["root_path"] = f"{existing_root_path}{self.base_path}" or "/"
+            await self.app(new_scope, receive, send)
+            return
+
+        response = Response(status_code=status.HTTP_404_NOT_FOUND)
+        await response(scope, receive, send)
+        return
+
 app = FastAPI(
     title="JumpServer Chat",
     docs_url="/docs" if ENV == "dev" else None,
     openapi_url="/openapi.json" if ENV == "dev" else None,
     redoc_url=None,
     lifespan=lifespan,
+    root_path=WEBUI_BASE_PATH,
 )
 
+if WEBUI_BASE_PATH:
+    app.add_middleware(BasePathMiddleware, base_path=WEBUI_BASE_PATH)
+
 app.state.config = AppConfig()
+
+if WEBUI_BASE_PATH:
+    current_webui_url = WEBUI_URL.value.rstrip("/")
+    if not current_webui_url.endswith(WEBUI_BASE_PATH):
+        WEBUI_URL.value = f"{current_webui_url}{WEBUI_BASE_PATH}"
 
 app.state.WEBUI_NAME = WEBUI_NAME
 
@@ -828,8 +893,8 @@ app.add_middleware(
 
 app.mount("/ws", socket_app)
 
-app.include_router(ollama.router, prefix="/ollama", tags=["ollama"])
-app.include_router(openai.router, prefix="/openai", tags=["openai"])
+app.include_router(ollama.router, prefix="/api/ollama", tags=["ollama"])
+app.include_router(openai.router, prefix="/api/openai", tags=["openai"])
 
 app.include_router(pipelines.router, prefix="/api/v1/pipelines", tags=["pipelines"])
 app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["tasks"])

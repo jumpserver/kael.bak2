@@ -1,6 +1,14 @@
 import adapter from '@sveltejs/adapter-static';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
+// Normalize PUBLIC_BASE_PATH to start with '/' and have no trailing '/'
+// Default to '/kael' to match Vite's dev base
+const rawBase = (process.env.PUBLIC_BASE_PATH || '/kael').trim();
+let normalizedBase = rawBase;
+if (normalizedBase && !normalizedBase.startsWith('/')) normalizedBase = `/${normalizedBase}`;
+if (normalizedBase !== '/' && normalizedBase.endsWith('/'))
+	normalizedBase = normalizedBase.slice(0, -1);
+
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	// Consult https://kit.svelte.dev/docs/integrations#preprocessors
@@ -14,7 +22,10 @@ const config = {
 			pages: 'build',
 			assets: 'build',
 			fallback: 'index.html'
-		})
+		}),
+		paths: {
+			base: normalizedBase || ''
+		}
 	},
 	vitePlugin: {
 		// inspector: {
