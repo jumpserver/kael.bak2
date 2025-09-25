@@ -59,6 +59,7 @@
 	import PencilSquare from '../icons/PencilSquare.svelte';
 	import ToggleBar from '../icons/ToggleBar.svelte';
 	import Home from '../icons/Home.svelte';
+	import { generateInitialsImage } from '$lib/utils';
 
 	const BREAKPOINT = 768;
 
@@ -776,26 +777,26 @@
 		</div>
 	</div>
 	<div class="px-2">
-		<div class="flex flex-col font-primary">
-			{#if $user !== undefined && $user !== null}
-				<button
-					class=" flex items-center rounded-xl py-2.5 px-2.5 w-full hover:bg-gray-100 dark:hover:bg-gray-900 transition"
-					on:click={() => {
-						showDropdown = !showDropdown;
-					}}
-				>
-					<div class=" self-center mr-3">
-						<img
-							src="/user.png"
-							class=" max-w-[30px] object-cover rounded-full"
-							alt="User profile"
-						/>
-					</div>
-					<div class=" self-center font-medium">{$user?.name}</div>
-				</button>
-			{/if}
+			<div class="flex flex-col font-primary">
+				{#if $user !== undefined && $user !== null}
+					<button
+						class=" flex items-center rounded-xl py-2.5 px-2.5 w-full hover:bg-gray-100 dark:hover:bg-gray-900 transition"
+						on:click={() => {
+								showDropdown = !showDropdown;
+							}}
+					>
+						<div class=" self-center mr-3">
+							<img
+                            								src={generateInitialsImage($user?.name)}
+                            								class=" max-w-[30px] object-cover rounded-full"
+                            								alt="User profile"
+                            							/>
+						</div>
+						<div class=" self-center font-medium">{$user?.name}</div>
+					</button>
+				{/if}
+			</div>
 		</div>
-	</div>
 </div>
 
 <style>

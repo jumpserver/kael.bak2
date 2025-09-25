@@ -8,6 +8,7 @@
 
 	import Modal from '$lib/components/common/Modal.svelte';
 	import localizedFormat from 'dayjs/plugin/localizedFormat';
+	import { generateInitialsImage } from '$lib/utils';
 
 	const i18n = getContext('i18n');
 	const dispatch = createEventDispatcher();
@@ -77,11 +78,11 @@
 				>
 					<div class=" flex items-center rounded-md py-2 px-4 w-full">
 						<div class=" self-center mr-5">
-							<!-- <img
-								src={selectedUser.profile_image_url}
+							<img
+								src={generateInitialsImage(selectedUser.name)}
 								class=" max-w-[55px] object-cover rounded-full"
 								alt="User profile"
-							/> -->
+							/>
 						</div>
 
 						<div>

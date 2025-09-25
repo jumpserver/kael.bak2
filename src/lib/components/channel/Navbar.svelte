@@ -2,6 +2,7 @@
 	import { showArchivedChats, showSidebar, user } from '$lib/stores';
 	import UserMenu from '$lib/components/layout/Sidebar/UserMenu.svelte';
 	import MenuLines from '../icons/MenuLines.svelte';
+	import { generateInitialsImage } from '$lib/utils';
 	export let channel;
 </script>
 
@@ -59,12 +60,12 @@
 							aria-label="User Menu"
 						>
 							<div class=" self-center">
-								<!-- <img
-									src={$user?.profile_image_url}
+								<img
+									src={generateInitialsImage($user?.name)}
 									class="size-6 object-cover rounded-full"
 									alt="User profile"
 									draggable="false"
-								/> -->
+								/>
 							</div>
 						</button>
 					</UserMenu>

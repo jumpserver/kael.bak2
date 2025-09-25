@@ -20,6 +20,7 @@
 	import MenuLines from '../icons/MenuLines.svelte';
 	import AdjustmentsHorizontal from '../icons/AdjustmentsHorizontal.svelte';
 	import PencilSquare from '../icons/PencilSquare.svelte';
+	import { generateInitialsImage } from '$lib/utils';
 
 	const i18n = getContext('i18n');
 
@@ -172,12 +173,12 @@
 							aria-label="User Menu"
 						>
 							<div class=" self-center">
-								<!-- <img
-									src={$user?.profile_image_url}
+								<img
+									src={generateInitialsImage($user?.name)}
 									class="size-6 object-cover rounded-full"
 									alt="User profile"
 									draggable="false"
-								/> -->
+								/>
 							</div>
 						</button>
 					</UserMenu>
