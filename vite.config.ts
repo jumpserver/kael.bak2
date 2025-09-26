@@ -48,18 +48,18 @@ export default defineConfig({
           target: 'http://localhost:8083',
           changeOrigin: true,
         },
-      '/kael/openai': {
-		 target: 'http://localhost:8083',
-		 changeOrigin: true,
+        '/kael/openai': {
+		   target: 'http://localhost:8083',
+		   changeOrigin: true,
 		},
-      '/kael/ollama': {
-		 target: 'http://localhost:8083',
-		 changeOrigin: true,
+        '/kael/ollama': {
+		   target: 'http://localhost:8083',
+		   changeOrigin: true,
 		},
-      '/kael/ws': {
-		 target: 'http://localhost:8083',
-		 ws: true,
-		 changeOrigin: true,
+        '/kael/ws': {
+		   target: 'http://localhost:8083',
+		   ws: true,
+		   changeOrigin: true,
 		}
       },
     },
