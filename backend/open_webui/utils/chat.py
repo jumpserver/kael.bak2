@@ -19,15 +19,15 @@ from open_webui.socket.main import (
     get_event_emitter,
 )
 
-from open_webui.routers.openai import (
+from open_webui.views.openai import (
     generate_chat_completion as generate_openai_chat_completion,
 )
 
-from open_webui.routers.ollama import (
+from open_webui.views.ollama import (
     generate_chat_completion as generate_ollama_chat_completion,
 )
 
-from open_webui.routers.pipelines import (
+from open_webui.views.pipelines import (
     process_pipeline_outlet_filter,
 )
 

@@ -4,7 +4,7 @@ import sys
 
 from fastapi import Request
 
-from open_webui.routers import openai, ollama
+from open_webui.views import openai, ollama
 from open_webui.config import DEFAULT_ARENA_MODEL
 from open_webui.env import SRC_LOG_LEVELS, GLOBAL_LOG_LEVEL
 

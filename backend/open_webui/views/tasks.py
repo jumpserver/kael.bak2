@@ -19,7 +19,7 @@ from open_webui.utils.task import (
 from open_webui.utils.auth import get_verified_user
 from open_webui.constants import TASKS
 
-from open_webui.routers.pipelines import process_pipeline_inlet_filter
+from open_webui.views.pipelines import process_pipeline_inlet_filter
 from open_webui.utils.task import get_task_model_id
 
 from open_webui.config import (

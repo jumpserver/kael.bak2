@@ -23,7 +23,7 @@ from open_webui.config import CACHE_DIR
 from open_webui.constants import ERROR_MESSAGES
 
 
-from open_webui.routers.openai import get_all_models_responses
+from open_webui.views.openai import get_all_models_responses
 
 from open_webui.utils.auth import get_verified_user
 

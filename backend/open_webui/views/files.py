@@ -27,9 +27,9 @@ from open_webui.models.files import (
 )
 from open_webui.models.knowledge import Knowledges
 
-from open_webui.routers.knowledge import get_knowledge, get_knowledge_list
-from open_webui.routers.retrieval import ProcessFileForm, process_file
-from open_webui.routers.audio import transcribe
+from open_webui.views.knowledge import get_knowledge, get_knowledge_list
+from open_webui.views.retrieval import ProcessFileForm, process_file
+from open_webui.views.audio import transcribe
 from open_webui.storage.provider import Storage
 from open_webui.utils.auth import get_verified_user
 from pydantic import BaseModel

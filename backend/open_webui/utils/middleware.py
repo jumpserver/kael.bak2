@@ -25,15 +25,15 @@ from open_webui.socket.main import (
     get_event_emitter,
     get_active_status_by_user_id,
 )
-from open_webui.routers.tasks import (
+from open_webui.views.tasks import (
     generate_queries,
     generate_title,
     generate_image_prompt,
     generate_chat_tags,
 )
-from open_webui.routers.retrieval import process_web_search, SearchForm
-from open_webui.routers.images import image_generations, GenerateImageForm
-from open_webui.routers.pipelines import process_pipeline_inlet_filter
+from open_webui.views.retrieval import process_web_search, SearchForm
+from open_webui.views.images import image_generations, GenerateImageForm
+from open_webui.views.pipelines import process_pipeline_inlet_filter
 from open_webui.utils.webhook import post_webhook
 from open_webui.models.users import UserModel
 from open_webui.models.functions import Functions

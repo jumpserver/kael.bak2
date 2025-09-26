@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from open_webui.config import CACHE_DIR
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import SRC_LOG_LEVELS
-from open_webui.routers.files import upload_file
+from open_webui.views.files import upload_file
 from open_webui.utils.auth import get_verified_user
 from open_webui.utils.images.comfyui import (
     ComfyUIGenerateImageForm,

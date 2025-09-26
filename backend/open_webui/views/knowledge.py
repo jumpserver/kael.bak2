@@ -11,7 +11,7 @@ from open_webui.models.knowledge import (
 )
 from open_webui.models.files import Files, FileModel
 from open_webui.retrieval.vector.connector import VECTOR_DB_CLIENT
-from open_webui.routers.retrieval import (
+from open_webui.views.retrieval import (
     process_file,
     ProcessFileForm,
     process_files_batch,
