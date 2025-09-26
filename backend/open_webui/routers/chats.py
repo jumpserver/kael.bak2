@@ -84,10 +84,11 @@ async def get_user_chat_list_by_user_id(
 async def create_new_chat(
         form_data: ChatForm,
         sid: str = Header(...),
-        user=Depends(get_verified_user)
+        user=Depends(get_verified_user),
+        request: Request = None,
 ):
     try:
-        chat = Chats.insert_new_chat(form_data, sid)
+        chat = Chats.insert_new_chat(form_data, sid, request, user)
         return ChatResponse(**chat)
     except Exception as e:
         log.exception(e)
@@ -493,7 +494,8 @@ async def clone_chat_by_id(
         form_data: CloneForm,
         id: str,
         sid: str = Header(...),
-        user=Depends(get_verified_user)
+        user=Depends(get_verified_user),
+        request: Request = None,
 ):
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
     if chat:
@@ -504,7 +506,7 @@ async def clone_chat_by_id(
             "title": form_data.title if form_data.title else f"Clone of {chat['title']}",
         }
 
-        chat = Chats.insert_new_chat(ChatForm(**{"chat": updated_chat}), sid)
+        chat = Chats.insert_new_chat(ChatForm(**{"chat": updated_chat}), sid, request, user)
         return ChatResponse(**chat.model_dump())
     else:
         raise HTTPException(
@@ -521,7 +523,9 @@ async def clone_chat_by_id(
 async def clone_shared_chat_by_id(
         _id: str,
         sid: str = Header(...),
-        user=Depends(get_verified_user)):
+        user=Depends(get_verified_user),
+        request: Request = None,
+):
     chat = Chats.get_chat_by_id(_id)
 
     if chat:
@@ -532,7 +536,7 @@ async def clone_shared_chat_by_id(
             "title": f"Clone of {chat['title']}",
         }
 
-        chat = Chats.insert_new_chat(ChatForm(**{"chat": updated_chat}), sid)
+        chat = Chats.insert_new_chat(ChatForm(**{"chat": updated_chat}), sid, request, user)
         return ChatResponse(**chat)
     else:
         raise HTTPException(

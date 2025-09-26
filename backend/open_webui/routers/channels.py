@@ -23,8 +23,7 @@ from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import SRC_LOG_LEVELS
 
 
-from open_webui.utils.auth import get_verified_user, get_verified_user
-from open_webui.utils.access_control import has_access, get_users_with_access
+from open_webui.utils.auth import get_verified_user
 from open_webui.utils.webhook import post_webhook
 
 log = logging.getLogger(__name__)

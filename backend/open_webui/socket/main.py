@@ -3,13 +3,9 @@ import socketio
 import logging
 import sys
 import time
-from typing import Optional
-from starlette import status
-from fastapi import HTTPException
 
-from open_webui.models.users import Users, UserNameResponse
 from open_webui.models.channels import Channels
-from open_webui.models.chats import Chats
+
 from open_webui.utils.redis import get_sentinels_from_env, get_sentinel_url_from_env
 
 from open_webui.env import (
@@ -23,10 +19,8 @@ from open_webui.env import (
 from open_webui.utils.auth import decode_token
 from open_webui.socket.utils import RedisDict, RedisLock
 
-from jms import SessionHandler, TokenHandler
+from jms import check_user
 from jms import session_manager
-from jms.wisp.exceptions import WispError
-from jms.wisp.protobuf.common_pb2 import TokenAuthInfo
 
 from open_webui.env import (
     GLOBAL_LOG_LEVEL,
@@ -104,8 +98,6 @@ else:
     USAGE_POOL = {}
     aquire_func = release_func = renew_func = lambda: True
 
-SID_SESSION_HANDLER = {}
-
 
 async def periodic_usage_pool_cleanup():
     if not aquire_func():
@@ -176,27 +168,23 @@ async def usage(sid, data):
     await sio.emit("usage", {"models": get_models_in_use()})
 
 
-async def create_auth_info(token: Optional[str] = None) -> TokenAuthInfo:
-    token_handler = TokenHandler()
-    try:
-        auth_info = token_handler.get_token_auth_info(token)
-    except WispError as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-    return auth_info
-
-
 @sio.event
 async def connect(sid, environ, auth):
-    # auth_info = await create_auth_info(auth["token"])
-    token = auth["token"]
-    auth_info = await create_auth_info(token)
-
     scope = environ.get("asgi.scope", {})
-    session_handler = SessionHandler(sio=sio, sid=sid, scope=scope, auth_info=auth_info)
+    handler = check_user.CheckUserHandler()
 
-    SID_SESSION_HANDLER[sid] = session_handler
+    cookie_header = ""
+    if scope and "headers" in scope:
+        for k, v in scope["headers"]:
+            if k == b"cookie":
+                cookie_header = v.decode("latin1")
+                break
 
-    user = auth_info.user
+    if not cookie_header and "HTTP_COOKIE" in environ:
+        cookie_header = environ["HTTP_COOKIE"]
+
+    user = handler.check_user_by_cookie_header(cookie_header)
+
     if user:
         SESSION_POOL[sid] = {
             "id": user.id,
@@ -209,7 +197,6 @@ async def connect(sid, environ, auth):
         else:
             USER_POOL[user.id] = [sid]
 
-        # print(f"user {user.name}({user.id}) connected with session ID {sid}")
         await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})
         await sio.emit("usage", {"models": get_models_in_use()})
 
@@ -241,6 +228,8 @@ async def user_join(sid, data):
 
 @sio.on("join-channels")
 async def join_channel(sid, data):
+    from open_webui.models.users import Users
+
     auth = data["auth"] if "auth" in data else None
     if not auth or "token" not in auth:
         return
@@ -262,6 +251,8 @@ async def join_channel(sid, data):
 
 @sio.on("channel-events")
 async def channel_events(sid, data):
+    from open_webui.models.users import UserNameResponse
+
     room = f"channel:{data['channel_id']}"
     participants = sio.manager.get_participants(
         namespace="/",
@@ -320,6 +311,7 @@ async def disconnect(sid):
 
 def get_event_emitter(request_info, update_db=True):
     async def __event_emitter__(event_data):
+        from open_webui.models.chats import Chats
         user_id = request_info["user_id"]
 
         session_ids = list(

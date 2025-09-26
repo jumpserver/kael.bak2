@@ -912,11 +912,7 @@ async def process_chat_payload(request, form_data, user, metadata, model):
     command_record = CommandRecord(input=user_message)
     jms_session.command_handler.command_record = command_record
 
-    is_continue = await jms_session.command_handler.command_acl_filter()
     asyncio.create_task(jms_session.replay_handler.write_input(command_record.input))
-    if not is_continue:
-        return None
-
     return form_data, metadata, events
 
 

@@ -2,8 +2,9 @@ import logging
 import time
 import uuid
 from typing import Optional, List
+from fastapi import Request
 
-from jms import session_manager
+from jms import session_manager, AccountChatHandler
 from open_webui.internal.db import Base, get_db
 from open_webui.models.tags import TagModel, Tags
 from open_webui.env import SRC_LOG_LEVELS
@@ -11,6 +12,10 @@ from open_webui.env import SRC_LOG_LEVELS
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import BigInteger, Boolean, Column, String, Text, JSON
 from sqlalchemy import or_, and_, text
+
+from jms import SessionHandler
+from jms.wisp.protobuf.common_pb2 import User
+
 
 ####################
 # Chat DB Schema
@@ -105,22 +110,28 @@ class ChatTitleIdResponse(BaseModel):
 
 class ChatTable:
 
-    def insert_new_chat(self, form_data: ChatForm, sid: str):
-        from open_webui.socket.main import SID_SESSION_HANDLER
-        session_handler = SID_SESSION_HANDLER.get(sid)
-        if not session_handler:
-           raise HTTPException(
-               status_code=status.HTTP_400_BAD_REQUEST,
-               detail="Session handler not found",
-           )
+    def insert_new_chat(self, form_data: ChatForm, sid: str, request: Request, user: User):
+        from open_webui.socket.main import sio
+        client_host, client_port = request.client or (None, None)
+        ip = client_host
 
+        xff = request.headers.get("x-forwarded-for")
+        xri = request.headers.get("x-real-ip")
+        if xff:
+            ip = xff.split(",")[0].strip()
+        elif xri:
+            ip = xri.strip()
 
-        ai_model = form_data.chat.get("models", [None])[0]
-        jms_session = session_handler.create_new_session(ai_model)
+        session_handler = SessionHandler(sio=sio, sid=sid, ip=ip, user=user)
+
+        account_handler = AccountChatHandler()
+
+        account_data = account_handler.get_account()
+        ai_model = form_data.chat.get("models", [None])[0] or ''
+        jms_session = session_handler.create_new_session(ai_model, account_data)
 
         session_id = jms_session.session.id
         user_id = jms_session.session.user_id
-
 
         chat = {
            'id': session_id,
