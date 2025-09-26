@@ -550,7 +550,7 @@
 				} else {
 					// Redirect Invalid Session User to /auth Page
 					localStorage.removeItem('token');
-					await goto(`/auth?redirect=${encodedUrl}`);
+					await goto(`/core/auth/login/?next=/kael?redirect=${encodedUrl}`);
 				}
 			}
 		} else {

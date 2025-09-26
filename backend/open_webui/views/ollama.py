@@ -72,22 +72,7 @@ log.setLevel(SRC_LOG_LEVELS["OLLAMA"])
 
 
 async def send_get_request(url, key=None):
-    timeout = aiohttp.ClientTimeout(total=AIOHTTP_CLIENT_TIMEOUT_MODEL_LIST)
-    try:
-        async with aiohttp.ClientSession(timeout=timeout, trust_env=True) as session:
-            async with session.get(
-                url,
-                headers={
-                    "Content-Type": "application/json",
-                    **({"Authorization": f"Bearer {key}"} if key else {}),
-                },
-                ssl=AIOHTTP_CLIENT_SESSION_SSL,
-            ) as response:
-                return await response.json()
-    except Exception as e:
-        # Handle connection error here
-        log.error(f"Connection error: {e}")
-        return None
+    return None
 
 
 async def cleanup_response(
@@ -270,69 +255,8 @@ async def update_config(
 @cached(ttl=1)
 async def get_all_models(request: Request):
     log.info("get_all_models()")
-    if request.app.state.config.ENABLE_OLLAMA_API:
 
-        url= 'http://localhost:11434'
-        responses = await asyncio.gather(
-            send_get_request(f"{url}/api/tags")
-        )
-
-        for idx, response in enumerate(responses):
-            if response:
-                url = request.app.state.config.OLLAMA_BASE_URLS[idx]
-                api_config = request.app.state.config.OLLAMA_API_CONFIGS.get(
-                    str(idx),
-                    request.app.state.config.OLLAMA_API_CONFIGS.get(
-                        url, {}
-                    ),  # Legacy support
-                )
-
-                prefix_id = api_config.get("prefix_id", None)
-                tags = api_config.get("tags", [])
-                model_ids = api_config.get("model_ids", [])
-
-                if len(model_ids) != 0 and "models" in response:
-                    response["models"] = list(
-                        filter(
-                            lambda model: model["model"] in model_ids,
-                            response["models"],
-                        )
-                    )
-
-                if prefix_id:
-                    for model in response.get("models", []):
-                        model["model"] = f"{prefix_id}.{model['model']}"
-
-                if tags:
-                    for model in response.get("models", []):
-                        model["tags"] = tags
-
-        def merge_models_lists(model_lists):
-            merged_models = {}
-
-            for idx, model_list in enumerate(model_lists):
-                if model_list is not None:
-                    for model in model_list:
-                        id = model["model"]
-                        if id not in merged_models:
-                            model["urls"] = [idx]
-                            merged_models[id] = model
-                        else:
-                            merged_models[id]["urls"].append(idx)
-
-            return list(merged_models.values())
-
-        models = {
-            "models": merge_models_lists(
-                map(
-                    lambda response: response.get("models", []) if response else None,
-                    responses,
-                )
-            )
-        }
-
-    else:
-        models = {"models": []}
+    models = {"models": []}
 
     request.app.state.OLLAMA_MODELS = {
         model["model"]: model for model in models["models"]
@@ -399,7 +323,9 @@ async def get_ollama_tags(
 @router.get("/api/version")
 @router.get("/api/version/{url_idx}")
 async def get_ollama_versions(request: Request, url_idx: Optional[int] = None):
-    if request.app.state.config.ENABLE_OLLAMA_API:
+    ENABLE_OLLAMA_API = False
+    # ENABLE_OLLAMA_API = request.app.state.config.ENABLE_OLLAMA_API
+    if ENABLE_OLLAMA_API:
         if url_idx is None:
             # returns lowest version
             request_tasks = []

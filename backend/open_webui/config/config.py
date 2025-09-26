@@ -278,7 +278,7 @@ class AppConfig:
 ENABLE_API_KEY = PersistentConfig(
     "ENABLE_API_KEY",
     "auth.api_key.enable",
-    os.environ.get("ENABLE_API_KEY", "True").lower() == "true",
+    os.environ.get("ENABLE_API_KEY", "False").lower() == "true",
 )
 
 ENABLE_API_KEY_ENDPOINT_RESTRICTIONS = PersistentConfig(
@@ -520,14 +520,14 @@ ENABLE_SIGNUP = PersistentConfig(
     (
         False
         if not WEBUI_AUTH
-        else os.environ.get("ENABLE_SIGNUP", "True").lower() == "true"
+        else os.environ.get("ENABLE_SIGNUP", "False").lower() == "true"
     ),
 )
 
 ENABLE_LOGIN_FORM = PersistentConfig(
     "ENABLE_LOGIN_FORM",
     "ui.ENABLE_LOGIN_FORM",
-    os.environ.get("ENABLE_LOGIN_FORM", "True").lower() == "true",
+    os.environ.get("ENABLE_LOGIN_FORM", "False").lower() == "true",
 )
 
 DEFAULT_LOCALE = PersistentConfig(

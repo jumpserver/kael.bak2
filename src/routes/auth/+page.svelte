@@ -123,7 +123,7 @@
 
 	onMount(async () => {
 		if ($user !== undefined) {
-			const redirectPath = querystringValue('redirect') || '/';
+			const redirectPath = "/core/auth/login/?next=/kael"
 			goto(redirectPath);
 		}
 		await checkOauthCallback();
