@@ -1,15 +1,12 @@
 import asyncio
 import logging
 from datetime import datetime
-from typing import Optional
-
 import socketio
 
 from jms.wisp.protobuf import service_pb2
 from jms.wisp.exceptions import WispError
-from jms.wisp.protobuf.common_pb2 import TokenAuthInfo, Session
+from jms.wisp.protobuf.common_pb2 import Session, User
 from open_webui.env import SRC_LOG_LEVELS
-from ..schemas import CommandRecord, JMSState, AskResponse, AskResponseType, reply
 from ..replay import ReplayHandler
 from ..command import CommandHandler
 from ..base import BaseWisp
@@ -19,43 +16,20 @@ logger.setLevel(SRC_LOG_LEVELS["WISP"])
 
 
 class JMSSession(BaseWisp):
-    def __init__(self, session: Session, auth_info: TokenAuthInfo, sio: socketio.AsyncServer, sid: str):
+    def __init__(self, session: Session, sio: socketio.AsyncServer, sid: str):
         super().__init__()
         self.sio = sio
         self.sid = sid
         self.session = session
-        self.history_asks = []
-        self.command_acls = list(auth_info.filter_rules)
-        self.expire_time = auth_info.expire_info.expire_at
-        self.max_idle_time_delta = auth_info.setting.max_idle_time
 
         self.command_handler = None
         self.replay_handler = None
-        self.jms_state = JMSState(id=session.id)
 
     def active_session(self) -> None:
         self.replay_handler = ReplayHandler(self.session)
         self.command_handler = CommandHandler(
-            self.session, self.command_acls, self.jms_state, self.sio, self.sid
+            self.session, self.sio, self.sid
         )
-        asyncio.create_task(self.maximum_idle_time_detection())
-
-    async def maximum_idle_time_detection(self):
-        last_active_time = datetime.now()
-
-        while True:
-            current_time = datetime.now()
-            idle_time = current_time - last_active_time
-
-            if idle_time.total_seconds() >= self.max_idle_time_delta * 60:
-                await self.close()
-                break
-
-            if self.jms_state.new_dialogue:
-                last_active_time = current_time
-                self.jms_state.new_dialogue = False
-
-            await asyncio.sleep(3)
 
     async def close_session(self) -> None:
         req = service_pb2.SessionFinishRequest(
@@ -75,56 +49,31 @@ class JMSSession(BaseWisp):
         await self.replay_handler.upload()
         await self.close_session()
         session_manager.unregister_jms_session(self)
-        # await self.notify_to_close()
-
-    # async def notify_to_close(self):
-    #     await reply(
-    #         self.websocket, AskResponse(
-    #             type=AskResponseType.finish,
-    #             conversation_id=self.session.id,
-    #             system_message='Session interrupted'
-    #         )
-    #     )
 
 
 class SessionHandler(BaseWisp):
 
-    def __init__(self, sio: socketio.AsyncServer, sid: str, scope: dict, auth_info: TokenAuthInfo):
+    def __init__(self, sio: socketio.AsyncServer, sid: str, ip: str, user: User):
         super().__init__()
         self.sio = sio
         self.sid = sid
-        self.scope = scope
-        self.auth_info = auth_info
-        self.remote_address = self._get_remote_address()
+        self.remote_address = ip
+        self.user = user
 
-    def _get_remote_address(self) -> Optional[str]:
-        client = self.scope.get("client")
-        ip = client[0] if client else None
-
-        headers = dict(self.scope.get("headers", []))
-        xff = headers.get(b"x-forwarded-for")
-        xri = headers.get(b"x-real-ip")
-        if xff:
-            ip = xff.decode().split(",")[0].strip()
-        elif xri:
-            ip = xri.decode().strip()
-
-        return ip
-
-    def create_new_session(self, ai_model: str) -> JMSSession:
-        session = self.create_session(self.auth_info, ai_model)
-        jms_session = JMSSession(session, self.auth_info, self.sio, self.sid)
+    def create_new_session(self, ai_model: str, account_data: dict) -> JMSSession:
+        session = self.create_session(ai_model, account_data)
+        jms_session = JMSSession(session, self.sio, self.sid)
         return jms_session
 
-    def create_session(self, auth_info: TokenAuthInfo, ai_model: str) -> Session:
+    def create_session(self, ai_model: str, account_data: dict) -> Session:
         req_session = Session(
-            user_id=auth_info.user.id,
-            user=f'{auth_info.user.name}({auth_info.user.username})',
-            account_id=auth_info.account.id,
-            account=f'{auth_info.account.name}({auth_info.account.username})',
-            org_id=auth_info.asset.org_id,
-            asset_id=auth_info.asset.id,
-            asset=auth_info.asset.name,
+            user_id=self.user.id,
+            user=f'{self.user.name}({self.user.username})',
+            account_id=account_data['Id'],
+            account=f'{account_data["Name"]}({account_data["Username"]})',
+            org_id=account_data['OrgId'],
+            asset_id=dict(account_data['Asset'])['Id'],
+            asset=dict(account_data['Asset'])['Name'],
             login_from=Session.LoginFrom.WT,
             protocol=ai_model,
             date_start=int(datetime.now().timestamp()),
