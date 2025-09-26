@@ -5,8 +5,6 @@
 	import { onMount, getContext, tick, createEventDispatcher } from 'svelte';
 	import { blur, fade } from 'svelte/transition';
 
-	import ChatGPT from '$lib/components/icons/models/ChatGPT.svelte';
-
 	const dispatch = createEventDispatcher();
 
 	import { config, user, models as _models, temporaryChatEnabled } from '$lib/stores';

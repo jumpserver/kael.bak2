@@ -1857,6 +1857,7 @@
 		let _chatId = $chatId;
 
 		if (!$temporaryChatEnabled) {
+			console.log("Create new chat1: ", history);
 			chat = await createNewChat(localStorage.token, {
 				id: _chatId,
 				title: $i18n.t('New Chat'),

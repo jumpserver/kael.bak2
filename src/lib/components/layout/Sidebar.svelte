@@ -489,7 +489,7 @@
 			class=" cursor-pointer p-[7px] flex rounded-xl hover:bg-gray-100 dark:hover:bg-gray-900 transition"
 			on:click={async () => {
 				selectedChatId = null;
-				await goto('/');
+				await goto('/kael');
 				const newChatButton = document.getElementById('new-chat-button');
 				setTimeout(() => {
 					newChatButton?.click();

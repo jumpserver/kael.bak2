@@ -8,6 +8,7 @@
 	import type { i18n as i18nType, t } from 'i18next';
 
 	const i18n = getContext<Writable<i18nType>>('i18n');
+	import ModelIcon from '$lib/components/icons/models/ModelIcon.svelte';
 
 	const dispatch = createEventDispatcher();
 
@@ -31,7 +32,6 @@
 	import { WEBUI_BASE_URL } from '$lib/constants';
 
 	import Name from './Name.svelte';
-	import ProfileImage from './ProfileImage.svelte';
 	import Skeleton from './Skeleton.svelte';
 	import Image from '$lib/components/common/Image.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
@@ -588,11 +588,7 @@
 		dir={$settings.chatDirection}
 	>
 		<div class={`shrink-0 ltr:mr-3 rtl:ml-3`}>
-			<ProfileImage
-				src={model?.info?.meta?.profile_image_url ??
-					($i18n.language === 'dg-DG' ? `/doge.png` : `${WEBUI_BASE_URL}/static/favicon.png`)}
-				className={'size-8'}
-			/>
+			<ModelIcon name={model?.name ?? message.model} className={'size-8'} />
 		</div>
 
 		<div class="flex-auto w-0 pl-1">
