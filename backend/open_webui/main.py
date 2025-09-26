@@ -10,6 +10,9 @@ import datetime as dt
 from urllib.parse import urlencode, parse_qs, urlparse
 from pydantic import BaseModel
 
+# Base path configuration - easily changeable
+BASE_PATH = "/kael"
+
 import requests
 
 from fastapi import (
@@ -19,6 +22,7 @@ from fastapi import (
     Request,
     status,
     applications,
+    APIRouter,
 )
 
 from fastapi.openapi.docs import get_swagger_ui_html
@@ -803,7 +807,7 @@ async def check_url(request: Request, call_next):
 @app.middleware("http")
 async def inspect_websocket(request: Request, call_next):
     if (
-            "/ws/socket.io" in request.url.path
+            f"{BASE_PATH}/ws/socket.io" in request.url.path
             and request.query_params.get("transport") == "websocket"
     ):
         upgrade = (request.headers.get("Upgrade") or "").lower()
@@ -826,40 +830,172 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/ws", socket_app)
+def setup_routes(app, socket_app):
+    """
+    Setup all routes for the FastAPI application using APIRouter.
+    This provides a clean way to organize routes and easily change the base path.
+    """
+    # Create main API router
+    main_router = APIRouter()
+    
+    # Include all sub-routers with their prefixes
+    main_router.include_router(ollama.router, prefix="/ollama", tags=["ollama"])
+    main_router.include_router(openai.router, prefix="/openai", tags=["openai"])
+    
+    main_router.include_router(pipelines.router, prefix="/api/v1/pipelines", tags=["pipelines"])
+    main_router.include_router(tasks.router, prefix="/api/v1/tasks", tags=["tasks"])
+    main_router.include_router(images.router, prefix="/api/v1/images", tags=["images"])
+    
+    main_router.include_router(audio.router, prefix="/api/v1/audio", tags=["audio"])
+    main_router.include_router(retrieval.router, prefix="/api/v1/retrieval", tags=["retrieval"])
+    
+    main_router.include_router(configs.router, prefix="/api/v1/configs", tags=["configs"])
+    
+    main_router.include_router(auths.router, prefix="/api/v1/auths", tags=["auths"])
+    main_router.include_router(users.router, prefix="/api/v1/users", tags=["users"])
+    
+    main_router.include_router(channels.router, prefix="/api/v1/channels", tags=["channels"])
+    main_router.include_router(chats.router, prefix="/api/v1/chats", tags=["chats"])
+    
+    main_router.include_router(models.router, prefix="/api/v1/models", tags=["models"])
+    main_router.include_router(knowledge.router, prefix="/api/v1/knowledge", tags=["knowledge"])
+    main_router.include_router(prompts.router, prefix="/api/v1/prompts", tags=["prompts"])
+    main_router.include_router(tools.router, prefix="/api/v1/tools", tags=["tools"])
+    
+    main_router.include_router(memories.router, prefix="/api/v1/memories", tags=["memories"])
+    main_router.include_router(folders.router, prefix="/api/v1/folders", tags=["folders"])
+    main_router.include_router(groups.router, prefix="/api/v1/groups", tags=["groups"])
+    main_router.include_router(files.router, prefix="/api/v1/files", tags=["files"])
+    main_router.include_router(functions.router, prefix="/api/v1/functions", tags=["functions"])
+    main_router.include_router(evaluations.router, prefix="/api/v1/evaluations", tags=["evaluations"])
+    main_router.include_router(utils.router, prefix="/api/v1/utils", tags=["utils"])
+    
+    # Mount WebSocket and main router with base path
+    app.mount(f"{BASE_PATH}/ws", socket_app)
+    app.include_router(main_router, prefix=BASE_PATH)
+    
+    # Add direct endpoints with base path
+    @app.get(f"{BASE_PATH}/api/models")
+    async def get_models(request: Request, user=Depends(get_verified_user)):
+        all_models = await get_all_models(request)
 
-app.include_router(ollama.router, prefix="/ollama", tags=["ollama"])
-app.include_router(openai.router, prefix="/openai", tags=["openai"])
+        models = []
+        for model in all_models:
+            # Filter out filter pipelines
+            if "pipeline" in model and model["pipeline"].get("type", None) == "filter":
+                continue
 
-app.include_router(pipelines.router, prefix="/api/v1/pipelines", tags=["pipelines"])
-app.include_router(tasks.router, prefix="/api/v1/tasks", tags=["tasks"])
-app.include_router(images.router, prefix="/api/v1/images", tags=["images"])
+            try:
+                model_tags = [
+                    tag.get("name")
+                    for tag in model.get("info", {}).get("meta", {}).get("tags", [])
+                ]
+                tags = [tag.get("name") for tag in model.get("tags", [])]
 
-app.include_router(audio.router, prefix="/api/v1/audio", tags=["audio"])
-app.include_router(retrieval.router, prefix="/api/v1/retrieval", tags=["retrieval"])
+                tags = list(set(model_tags + tags))
+                model["tags"] = [{"name": tag} for tag in tags]
+            except Exception as e:
+                log.debug(f"Error processing model tags: {e}")
+                model["tags"] = []
+                pass
 
-app.include_router(configs.router, prefix="/api/v1/configs", tags=["configs"])
+            models.append(model)
 
-app.include_router(auths.router, prefix="/api/v1/auths", tags=["auths"])
-app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
+        model_order_list = request.app.state.config.MODEL_ORDER_LIST
+        if model_order_list:
+            model_order_dict = {model_id: i for i, model_id in enumerate(model_order_list)}
+            # Sort models by order list priority, with fallback for those not in the list
+            models.sort(
+                key=lambda x: (model_order_dict.get(x["id"], float("inf")), x["name"])
+            )
 
-app.include_router(channels.router, prefix="/api/v1/channels", tags=["channels"])
-app.include_router(chats.router, prefix="/api/v1/chats", tags=["chats"])
+        log.debug(
+            f"/api/models returned filtered models accessible to the user: {json.dumps([model['id'] for model in models])}"
+        )
+        return {"data": models}
 
-app.include_router(models.router, prefix="/api/v1/models", tags=["models"])
-app.include_router(knowledge.router, prefix="/api/v1/knowledge", tags=["knowledge"])
-app.include_router(prompts.router, prefix="/api/v1/prompts", tags=["prompts"])
-app.include_router(tools.router, prefix="/api/v1/tools", tags=["tools"])
+    @app.get(f"{BASE_PATH}/api/models/base")
+    async def get_base_models(request: Request, user=Depends(get_verified_user)):
+        models = await get_all_base_models(request, user=user)
+        return {"data": models}
 
-app.include_router(memories.router, prefix="/api/v1/memories", tags=["memories"])
-app.include_router(folders.router, prefix="/api/v1/folders", tags=["folders"])
-app.include_router(groups.router, prefix="/api/v1/groups", tags=["groups"])
-app.include_router(files.router, prefix="/api/v1/files", tags=["files"])
-app.include_router(functions.router, prefix="/api/v1/functions", tags=["functions"])
-app.include_router(
-    evaluations.router, prefix="/api/v1/evaluations", tags=["evaluations"]
-)
-app.include_router(utils.router, prefix="/api/v1/utils", tags=["utils"])
+    @app.get(f"{BASE_PATH}/api/config")
+    async def get_app_config():
+        return {
+            "status": True,
+            "name": app.state.WEBUI_NAME,
+            "version": VERSION,
+            "default_locale": str(DEFAULT_LOCALE),
+            "features": {
+                "auth": WEBUI_AUTH,
+                "auth_trusted_header": bool(app.state.AUTH_TRUSTED_EMAIL_HEADER),
+                "enable_ldap": app.state.config.ENABLE_LDAP,
+                "enable_api_key": app.state.config.ENABLE_API_KEY,
+                "enable_signup": app.state.config.ENABLE_SIGNUP,
+                "enable_login_form": app.state.config.ENABLE_LOGIN_FORM,
+                "enable_websocket": ENABLE_WEBSOCKET_SUPPORT,
+                "enable_direct_connections": app.state.config.ENABLE_DIRECT_CONNECTIONS,
+                "enable_channels": app.state.config.ENABLE_CHANNELS,
+                "enable_web_search": app.state.config.ENABLE_WEB_SEARCH,
+                "enable_code_execution": app.state.config.ENABLE_CODE_EXECUTION,
+                "enable_code_interpreter": app.state.config.ENABLE_CODE_INTERPRETER,
+                "enable_image_generation": app.state.config.ENABLE_IMAGE_GENERATION,
+                "enable_autocomplete_generation": app.state.config.ENABLE_AUTOCOMPLETE_GENERATION,
+                "enable_community_sharing": app.state.config.ENABLE_COMMUNITY_SHARING,
+                "enable_message_rating": app.state.config.ENABLE_MESSAGE_RATING,
+                "enable_user_webhooks": app.state.config.ENABLE_USER_WEBHOOKS,
+                "enable_google_drive_integration": app.state.config.ENABLE_GOOGLE_DRIVE_INTEGRATION,
+                "enable_onedrive_integration": app.state.config.ENABLE_ONEDRIVE_INTEGRATION,
+            },
+            "default_models": app.state.config.DEFAULT_MODELS,
+            "default_prompt_suggestions": app.state.config.DEFAULT_PROMPT_SUGGESTIONS,
+            "user_count": 1,
+            "code": {
+                "engine": app.state.config.CODE_EXECUTION_ENGINE,
+            },
+            "audio": {
+                "tts": {
+                    "engine": app.state.config.TTS_ENGINE,
+                    "voice": app.state.config.TTS_VOICE,
+                    "split_on": app.state.config.TTS_SPLIT_ON,
+                },
+                "stt": {
+                    "engine": app.state.config.STT_ENGINE,
+                },
+            },
+            "file": {
+                "max_size": app.state.config.FILE_MAX_SIZE,
+                "max_count": app.state.config.FILE_MAX_COUNT,
+            },
+            "permissions": {**app.state.config.USER_PERMISSIONS},
+            "google_drive": {
+                "client_id": GOOGLE_DRIVE_CLIENT_ID.value,
+                "api_key": GOOGLE_DRIVE_API_KEY.value,
+            },
+            "onedrive": {"client_id": ONEDRIVE_CLIENT_ID.value},
+            "active_entries": app.state.USER_COUNT,
+        }
+
+    @app.get(f"{BASE_PATH}/api/version")
+    async def get_app_version():
+        return {
+            "version": VERSION,
+        }
+
+    @app.get(f"{BASE_PATH}/health/")
+    async def health():
+        UTC = getattr(dt, "UTC", dt.timezone.utc)
+        upTime = dt.datetime.now().astimezone().astimezone(UTC)
+        now_utc = dt.datetime.now(UTC)
+        return {
+            "timestamp": now_utc.isoformat().replace("+00:00", "Z"),  # ISO8601 with Z
+            "uptime": str(now_utc - upTime),
+        }
+    
+    return app
+
+# Setup all routes
+setup_routes(app, socket_app)
 
 try:
     audit_level = AuditLevel(AUDIT_LOG_LEVEL)
@@ -876,367 +1012,10 @@ if audit_level != AuditLevel.NONE:
     )
 
 
-##################################
-#
-# Chat Endpoints
-#
-##################################
 
 
-@app.get("/api/models")
-async def get_models(request: Request, user=Depends(get_verified_user)):
-    all_models = await get_all_models(request)
-
-    models = []
-    for model in all_models:
-        # Filter out filter pipelines
-        if "pipeline" in model and model["pipeline"].get("type", None) == "filter":
-            continue
-
-        try:
-            model_tags = [
-                tag.get("name")
-                for tag in model.get("info", {}).get("meta", {}).get("tags", [])
-            ]
-            tags = [tag.get("name") for tag in model.get("tags", [])]
-
-            tags = list(set(model_tags + tags))
-            model["tags"] = [{"name": tag} for tag in tags]
-        except Exception as e:
-            log.debug(f"Error processing model tags: {e}")
-            model["tags"] = []
-            pass
-
-        models.append(model)
-
-    model_order_list = request.app.state.config.MODEL_ORDER_LIST
-    if model_order_list:
-        model_order_dict = {model_id: i for i, model_id in enumerate(model_order_list)}
-        # Sort models by order list priority, with fallback for those not in the list
-        models.sort(
-            key=lambda x: (model_order_dict.get(x["id"], float("inf")), x["name"])
-        )
-
-    log.debug(
-        f"/api/models returned filtered models accessible to the user: {json.dumps([model['id'] for model in models])}"
-    )
-    return {"data": models}
-
-
-@app.get("/api/models/base")
-async def get_base_models(request: Request, user=Depends(get_verified_user)):
-    models = await get_all_base_models(request, user=user)
-    return {"data": models}
-
-
-@app.post("/api/chat/completions")
-async def chat_completion(
-        request: Request,
-        form_data: dict,
-        user=Depends(get_verified_user),
-):
-    if not request.app.state.MODELS:
-        await get_all_models(request)
-
-    model_item = form_data.pop("model_item", {})
-    tasks = form_data.pop("background_tasks", None)
-
-    metadata = {}
-    try:
-        if not model_item.get("direct", False):
-            model_id = form_data.get("model", None)
-            if model_id not in request.app.state.MODELS:
-                raise Exception("Model not found")
-
-            model = request.app.state.MODELS[model_id]
-            model_info = Models.get_model_by_id(model_id)
-        else:
-            model = model_item
-            model_info = None
-
-            request.state.direct = True
-            request.state.model = model
-
-        metadata = {
-            "user_id": user.id,
-            "chat_id": form_data.pop("chat_id", None),
-            "message_id": form_data.pop("id", None),
-            "session_id": form_data.pop("session_id", None),
-            "tool_ids": form_data.get("tool_ids", None),
-            "tool_servers": form_data.pop("tool_servers", None),
-            "files": form_data.get("files", None),
-            "features": form_data.get("features", None),
-            "variables": form_data.get("variables", None),
-            "model": model,
-            "direct": model_item.get("direct", False),
-            **(
-                {"function_calling": "native"}
-                if form_data.get("params", {}).get("function_calling") == "native"
-                   or (
-                           model_info
-                           and model_info.params.model_dump().get("function_calling")
-                           == "native"
-                   )
-                else {}
-            ),
-        }
-
-        request.state.metadata = metadata
-        form_data["metadata"] = metadata
-
-        form_data, metadata, events = await process_chat_payload(
-            request, form_data, user, metadata, model
-        )
-
-    except Exception as e:
-        log.debug(f"Error processing chat payload: {e}")
-        if metadata.get("chat_id") and metadata.get("message_id"):
-            # Update the chat message with the error
-            Chats.upsert_message_to_chat_by_id_and_message_id(
-                metadata["chat_id"],
-                metadata["message_id"],
-                {
-                    "error": {"content": str(e)},
-                },
-            )
-
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-
-    try:
-        response = await chat_completion_handler(request, form_data, user)
-
-        return await process_chat_response(
-            request, response, form_data, user, metadata, model, events, tasks
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-
-
-# Alias for chat_completion (Legacy)
-generate_chat_completions = chat_completion
-generate_chat_completion = chat_completion
-
-
-@app.post("/api/chat/completed")
-async def chat_completed(
-        request: Request, form_data: dict, user=Depends(get_verified_user)
-):
-    try:
-        model_item = form_data.pop("model_item", {})
-
-        if model_item.get("direct", False):
-            request.state.direct = True
-            request.state.model = model_item
-
-        return await chat_completed_handler(request, form_data, user)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-
-
-@app.post("/api/chat/actions/{action_id}")
-async def chat_action(
-        request: Request, action_id: str, form_data: dict, user=Depends(get_verified_user)
-):
-    try:
-        model_item = form_data.pop("model_item", {})
-
-        if model_item.get("direct", False):
-            request.state.direct = True
-            request.state.model = model_item
-
-        return await chat_action_handler(request, action_id, form_data, user)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
-
-
-@app.post("/api/tasks/stop/{task_id}")
-async def stop_task_endpoint(task_id: str, user=Depends(get_verified_user)):
-    try:
-        result = await stop_task(task_id)
-        return result
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-
-
-@app.get("/api/tasks")
-async def list_tasks_endpoint(user=Depends(get_verified_user)):
-    return {"tasks": list_tasks()}
-
-
-@app.get("/api/tasks/chat/{chat_id}")
-async def list_tasks_by_chat_id_endpoint(chat_id: str, user=Depends(get_verified_user)):
-    chat = Chats.get_chat_by_id(chat_id)
-    if chat is None or chat['user_id'] != user.id:
-        return {"task_ids": []}
-
-    task_ids = list_task_ids_by_chat_id(chat_id)
-
-    print(f"Task IDs for chat {chat_id}: {task_ids}")
-    return {"task_ids": task_ids}
-
-
-##################################
-#
-# Config Endpoints
-#
-##################################
-
-
-@app.get("/api/config")
-async def get_app_config():
-    return {
-        "status": True,
-        "name": app.state.WEBUI_NAME,
-        "version": VERSION,
-        "default_locale": str(DEFAULT_LOCALE),
-        "features": {
-            "auth": WEBUI_AUTH,
-            "auth_trusted_header": bool(app.state.AUTH_TRUSTED_EMAIL_HEADER),
-            "enable_ldap": app.state.config.ENABLE_LDAP,
-            "enable_api_key": app.state.config.ENABLE_API_KEY,
-            "enable_signup": app.state.config.ENABLE_SIGNUP,
-            "enable_login_form": app.state.config.ENABLE_LOGIN_FORM,
-            "enable_websocket": ENABLE_WEBSOCKET_SUPPORT,
-            "enable_direct_connections": app.state.config.ENABLE_DIRECT_CONNECTIONS,
-            "enable_channels": app.state.config.ENABLE_CHANNELS,
-            "enable_web_search": app.state.config.ENABLE_WEB_SEARCH,
-            "enable_code_execution": app.state.config.ENABLE_CODE_EXECUTION,
-            "enable_code_interpreter": app.state.config.ENABLE_CODE_INTERPRETER,
-            "enable_image_generation": app.state.config.ENABLE_IMAGE_GENERATION,
-            "enable_autocomplete_generation": app.state.config.ENABLE_AUTOCOMPLETE_GENERATION,
-            "enable_community_sharing": app.state.config.ENABLE_COMMUNITY_SHARING,
-            "enable_message_rating": app.state.config.ENABLE_MESSAGE_RATING,
-            "enable_user_webhooks": app.state.config.ENABLE_USER_WEBHOOKS,
-            "enable_google_drive_integration": app.state.config.ENABLE_GOOGLE_DRIVE_INTEGRATION,
-            "enable_onedrive_integration": app.state.config.ENABLE_ONEDRIVE_INTEGRATION,
-        },
-        "default_models": app.state.config.DEFAULT_MODELS,
-        "default_prompt_suggestions": app.state.config.DEFAULT_PROMPT_SUGGESTIONS,
-        "user_count": 1,
-        "code": {
-            "engine": app.state.config.CODE_EXECUTION_ENGINE,
-        },
-        "audio": {
-            "tts": {
-                "engine": app.state.config.TTS_ENGINE,
-                "voice": app.state.config.TTS_VOICE,
-                "split_on": app.state.config.TTS_SPLIT_ON,
-            },
-            "stt": {
-                "engine": app.state.config.STT_ENGINE,
-            },
-        },
-        "file": {
-            "max_size": app.state.config.FILE_MAX_SIZE,
-            "max_count": app.state.config.FILE_MAX_COUNT,
-        },
-        "permissions": {**app.state.config.USER_PERMISSIONS},
-        "google_drive": {
-            "client_id": GOOGLE_DRIVE_CLIENT_ID.value,
-            "api_key": GOOGLE_DRIVE_API_KEY.value,
-        },
-        "onedrive": {"client_id": ONEDRIVE_CLIENT_ID.value},
-        "active_entries": app.state.USER_COUNT,
-    }
-
-
-class UrlForm(BaseModel):
-    url: str
-
-
-@app.get("/api/webhook")
-async def get_webhook_url(user=Depends(get_verified_user)):
-    return {
-        "url": app.state.config.WEBHOOK_URL,
-    }
-
-
-@app.post("/api/webhook")
-async def update_webhook_url(form_data: UrlForm, user=Depends(get_verified_user)):
-    app.state.config.WEBHOOK_URL = form_data.url
-    app.state.WEBHOOK_URL = app.state.config.WEBHOOK_URL
-    return {"url": app.state.config.WEBHOOK_URL}
-
-
-@app.get("/api/version")
-async def get_app_version():
-    return {
-        "version": VERSION,
-    }
-
-
-@app.get("/manifest.json")
-async def get_manifest_json():
-    if app.state.EXTERNAL_PWA_MANIFEST_URL:
-        return requests.get(app.state.EXTERNAL_PWA_MANIFEST_URL).json()
-    else:
-        return {
-            "name": app.state.WEBUI_NAME,
-            "short_name": app.state.WEBUI_NAME,
-            "description": "JumpServer Chat is an open, extensible, user-friendly interface for AI that adapts to your workflow.",
-            "start_url": "/",
-            "display": "standalone",
-            "background_color": "#343541",
-            "orientation": "natural",
-            "icons": [
-                {
-                    "src": "/static/logo.png",
-                    "type": "image/png",
-                    "sizes": "500x500",
-                    "purpose": "any",
-                },
-                {
-                    "src": "/static/logo.png",
-                    "type": "image/png",
-                    "sizes": "500x500",
-                    "purpose": "maskable",
-                },
-            ],
-        }
-
-
-@app.get("/opensearch.xml")
-async def get_opensearch_xml():
-    xml_content = rf"""
-    <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/" xmlns:moz="http://www.mozilla.org/2006/browser/search/">
-    <ShortName>{app.state.WEBUI_NAME}</ShortName>
-    <Description>Search {app.state.WEBUI_NAME}</Description>
-    <InputEncoding>UTF-8</InputEncoding>
-    <Image width="16" height="16" type="image/x-icon">{app.state.config.WEBUI_URL}/static/favicon.png</Image>
-    <Url type="text/html" method="get" template="{app.state.config.WEBUI_URL}/?q={"{searchTerms}"}"/>
-    <moz:SearchForm>{app.state.config.WEBUI_URL}</moz:SearchForm>
-    </OpenSearchDescription>
-    """
-    return Response(content=xml_content, media_type="application/xml")
-
-
-UTC = getattr(dt, "UTC", dt.timezone.utc)
-upTime = dt.datetime.now().astimezone().astimezone(UTC)
-
-
-@app.get("/health/")
-async def health():
-    now_utc = dt.datetime.now(UTC)
-    return {
-        "timestamp": now_utc.isoformat().replace("+00:00", "Z"),  # ISO8601 with Z
-        "uptime": str(now_utc - upTime),
-    }
-
-
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-app.mount("/cache", StaticFiles(directory=CACHE_DIR), name="cache")
+app.mount(f"{BASE_PATH}/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.mount(f"{BASE_PATH}/cache", StaticFiles(directory=CACHE_DIR), name="cache")
 
 
 def swagger_ui_html(*args, **kwargs):
@@ -1254,7 +1033,7 @@ applications.get_swagger_ui_html = swagger_ui_html
 if os.path.exists(FRONTEND_BUILD_DIR):
     mimetypes.add_type("text/javascript", ".js")
     app.mount(
-        "/",
+        BASE_PATH,
         SPAStaticFiles(directory=FRONTEND_BUILD_DIR, html=True),
         name="spa-static-files",
     )

@@ -88,12 +88,13 @@ async def create_new_chat(
         request: Request = None,
 ):
     try:
+        log.debug(f"Creating new chat with form_data: {form_data}, sid: {sid}, user: {user.id}")
         chat = Chats.insert_new_chat(form_data, sid, request, user)
         return ChatResponse(**chat)
     except Exception as e:
-        log.exception(e)
+        log.exception(f"Error creating new chat: {e}")
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=ERROR_MESSAGES.DEFAULT()
+            status_code=status.HTTP_400_BAD_REQUEST, detail=f"Error creating chat: {str(e)}"
         )
 
 

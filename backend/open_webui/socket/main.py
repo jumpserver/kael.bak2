@@ -27,6 +27,12 @@ from open_webui.env import (
     SRC_LOG_LEVELS,
 )
 
+# Import BASE_PATH from main module
+try:
+    from open_webui.main import BASE_PATH
+except ImportError:
+    BASE_PATH = "/kael"
+
 logging.basicConfig(stream=sys.stdout, level=GLOBAL_LOG_LEVEL)
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["SOCKET"])
@@ -142,7 +148,7 @@ async def periodic_usage_pool_cleanup():
 
 app = socketio.ASGIApp(
     sio,
-    socketio_path="/ws/socket.io",
+    socketio_path=f"{BASE_PATH}/ws/socket.io",
 )
 
 

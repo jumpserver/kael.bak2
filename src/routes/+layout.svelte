@@ -60,12 +60,12 @@
 
 		const params = new URLSearchParams(window.location.search);
 		const token = params.get("token");
-		const _socket = io(`${WEBUI_BASE_URL}` || undefined, {
+		const _socket = io(undefined, {
 			reconnection: true,
 			reconnectionDelay: 1000,
 			reconnectionDelayMax: 5000,
 			randomizationFactor: 0.5,
-			path: '/ws/socket.io',
+			path: '/kael/ws/socket.io',
 			transports: enableWebsocket ? ['websocket'] : ['polling', 'websocket'],
 			auth: { token: token }
 		});

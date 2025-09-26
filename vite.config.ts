@@ -42,23 +42,24 @@ export default defineConfig({
 	},
 	server: {
       port: 5173,
+      base: '/kael/',
       proxy: {
-        '^/api/': {
+        '^/kael/api/': {
           target: 'http://localhost:8083',
           changeOrigin: true,
         },
-      '/openai': {
+      '/kael/openai': {
 		 target: 'http://localhost:8083',
-		 changeOrigin: true 
+		 changeOrigin: true,
 		},
-      '/ollama': {
+      '/kael/ollama': {
 		 target: 'http://localhost:8083',
-		 changeOrigin: true 
+		 changeOrigin: true,
 		},
-      '/ws': {
+      '/kael/ws': {
 		 target: 'http://localhost:8083',
 		 ws: true,
-		 changeOrigin: true 
+		 changeOrigin: true,
 		}
       },
     },

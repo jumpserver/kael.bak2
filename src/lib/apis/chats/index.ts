@@ -9,9 +9,9 @@ export const createNewChat = async (token: string, chat: object) => {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			authorization: `Bearer ${token}`
+			'Content-Type': 'application/json'
 		},
+		credentials: 'include',
 		body: JSON.stringify({
 			chat: chat
 		})

@@ -24,7 +24,7 @@
 				}}
 			>
 				<img
-					src="/static/splash.png"
+					src="/kael/static/splash.png"
 					class="size-11 dark:invert p-0.5"
 					alt="logo"
 					draggable="false"
