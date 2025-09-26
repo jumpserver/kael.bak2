@@ -870,26 +870,39 @@ TITLE_GENERATION_PROMPT_TEMPLATE = PersistentConfig(
     os.environ.get("TITLE_GENERATION_PROMPT_TEMPLATE", ""),
 )
 
-DEFAULT_TITLE_GENERATION_PROMPT_TEMPLATE = """### Task:
-Generate a concise, 3-5 word title with an emoji summarizing the chat history.
-### Guidelines:
-- The title should clearly represent the main theme or subject of the conversation.
-- Use emojis that enhance understanding of the topic, but avoid quotation marks or special formatting.
-- Write the title in the chat's primary language; default to English if multilingual.
-- Prioritize accuracy over excessive creativity; keep it clear and simple.
-### Output:
-JSON format: { "title": "your concise title here" }
-### Examples:
-- { "title": "📉 Stock Market Trends" },
-- { "title": "🍪 Perfect Chocolate Chip Recipe" },
-- { "title": "Evolution of Music Streaming" },
-- { "title": "Remote Work Productivity Tips" },
-- { "title": "Artificial Intelligence in Healthcare" },
+DEFAULT_TITLE_GENERATION_PROMPT_TEMPLATE = """### Task
+Generate a concise 3–5 word chat title with exactly one fitting emoji.
+
+### Hard Rules
+- Output MUST be a single raw JSON object on one line: { "title": "..." }
+- No extra text before/after JSON. No code fences. No trailing commas.
+- Title length: 3–5 words total (emoji not counted as a word).
+- Include exactly ONE emoji at the start or end. Do NOT use multiple emojis.
+- No quotes inside the title text, no colons (:), no brackets, no hashtags.
+- Language: Use the chat’s primary language; default to English if mixed.
+- Be accurate and specific, not poetic or clickbait.
+- Summarize the dominant topic of the chat history.
+
+### Style Hints
+- Prefer concrete nouns over vague terms.
+- Keep casing natural (Title Case for English; normal casing for others).
+- Avoid filler words (e.g., “tips and tricks” unless truly central).
+
+### Output Format
+Return exactly:
+{ "title": "<emoji?> <3–5 words in primary language>" }
+
+### Examples
+- { "title": "📉 Stock Market Trends" }
+- { "title": "🍪 Perfect Chocolate Chip Recipe" }
+- { "title": "Artificial Intelligence in Healthcare 🤖" }
 - { "title": "🎮 Video Game Development Insights" }
-### Chat History:
+
+### Chat History
 <chat_history>
 {{MESSAGES:END:2}}
-</chat_history>"""
+</chat_history>
+"""
 
 TAGS_GENERATION_PROMPT_TEMPLATE = PersistentConfig(
     "TAGS_GENERATION_PROMPT_TEMPLATE",
