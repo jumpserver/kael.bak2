@@ -272,7 +272,7 @@
 					toast.custom(NotificationToast, {
 						componentProps: {
 							onClick: () => {
-								goto(`/c/${event.chat_id}`);
+								goto(`/kael/c/${event.chat_id}`);
 							},
 							content: content,
 							title: title

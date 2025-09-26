@@ -107,10 +107,10 @@
 
 			if (isDarkMode) {
 				const darkImage = new Image();
-				darkImage.src = '/static/favicon-dark.png';
+				darkImage.src = '/kael/static/favicon-dark.png';
 
 				darkImage.onload = () => {
-					logo.src = '/static/favicon-dark.png';
+					logo.src = '/kael/static/favicon-dark.png';
 					logo.style.filter = ''; // Ensure no inversion is applied if favicon-dark.png exists
 				};
 

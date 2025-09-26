@@ -1875,7 +1875,7 @@
 			await chats.set(await getChatList(localStorage.token, $currentChatPage));
 			currentChatPage.set(1);
 
-			window.history.replaceState(history.state, '', `/c/${_chatId}`);
+			window.history.replaceState(history.state, '', `/kael/c/${_chatId}`);
 		} else {
 			_chatId = 'local';
 			await chatId.set('local');

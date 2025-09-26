@@ -137,7 +137,7 @@
 		});
 
 		if (res) {
-			goto(`/c/${res.id}`);
+			goto(`/kael/c/${res.id}`);
 		}
 	};
 </script>

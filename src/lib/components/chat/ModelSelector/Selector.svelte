@@ -338,7 +338,7 @@
 													/>
 												{:else}
 													<img
-														src={item.model?.info?.meta?.profile_image_url ?? '/user.png'}
+														src={item.model?.info?.meta?.profile_image_url ?? '/kael/user.png'}
 														alt="Model"
 														class="rounded-full size-5 flex items-center mr-2"
 													/>

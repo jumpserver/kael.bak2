@@ -101,7 +101,7 @@
 		});
 
 		if (res) {
-			goto(`/c/${res.id}`);
+			goto(`/kael/c/${res.id}`);
 
 			currentChatPage.set(1);
 			await chats.set(await getChatList(localStorage.token, $currentChatPage));
@@ -272,7 +272,7 @@
 				: selected
 					? 'bg-gray-100 dark:bg-gray-950'
 					: ' group-hover:bg-gray-100 dark:group-hover:bg-gray-950'}  whitespace-nowrap text-ellipsis"
-			href="/c/{id}"
+			href="/kael/c/{id}"
 			on:click={() => {
 				dispatch('select');
 

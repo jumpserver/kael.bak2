@@ -173,7 +173,7 @@
 								<Tooltip content={feedback?.user?.name}>
 									<div class="shrink-0">
 										<img
-											src={feedback?.user?.profile_image_url ?? '/user.png'}
+											src={feedback?.user?.profile_image_url ?? '/kael/user.png'}
 											alt={feedback?.user?.name}
 											class="size-5 rounded-full object-cover shrink-0"
 										/>
