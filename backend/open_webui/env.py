@@ -400,21 +400,6 @@ AUDIT_EXCLUDED_PATHS = os.getenv("AUDIT_EXCLUDED_PATHS", "/chats,/chat,/folders"
 AUDIT_EXCLUDED_PATHS = [path.strip() for path in AUDIT_EXCLUDED_PATHS]
 AUDIT_EXCLUDED_PATHS = [path.lstrip("/") for path in AUDIT_EXCLUDED_PATHS]
 
-####################################
-# OPENTELEMETRY
-####################################
-
-ENABLE_OTEL = os.environ.get("ENABLE_OTEL", "False").lower() == "true"
-OTEL_EXPORTER_OTLP_ENDPOINT = os.environ.get(
-    "OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317"
-)
-OTEL_SERVICE_NAME = os.environ.get("OTEL_SERVICE_NAME", "open-webui")
-OTEL_RESOURCE_ATTRIBUTES = os.environ.get(
-    "OTEL_RESOURCE_ATTRIBUTES", ""
-)  # e.g. key1=val1,key2=val2
-OTEL_TRACES_SAMPLER = os.environ.get(
-    "OTEL_TRACES_SAMPLER", "parentbased_always_on"
-).lower()
 
 ####################################
 # TOOLS/FUNCTIONS PIP OPTIONS
