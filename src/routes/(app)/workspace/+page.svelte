@@ -14,7 +14,7 @@
 			} else if ($user?.permissions?.workspace?.tools) {
 				goto('/workspace/tools');
 			} else {
-				goto('/');
+				goto('/kael/');
 			}
 		} else {
 			goto('/workspace/models');

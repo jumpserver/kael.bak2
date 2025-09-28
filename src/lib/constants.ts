@@ -14,7 +14,8 @@ export const IMAGES_API_BASE_URL = `${WEBUI_BASE_URL}/api/v1/images`;
 export const RETRIEVAL_API_BASE_URL = `${WEBUI_BASE_URL}/api/v1/retrieval`;
 
 export const WEBUI_VERSION = typeof APP_VERSION !== 'undefined' ? APP_VERSION : 'dev';
-export const WEBUI_BUILD_HASH = typeof APP_BUILD_HASH !== 'undefined' ? APP_BUILD_HASH : 'dev-build';
+export const WEBUI_BUILD_HASH =
+	typeof APP_BUILD_HASH !== 'undefined' ? APP_BUILD_HASH : 'dev-build';
 export const REQUIRED_OLLAMA_VERSION = '0.1.16';
 
 export const SUPPORTED_FILE_TYPE = [

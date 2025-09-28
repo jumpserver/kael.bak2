@@ -51,7 +51,7 @@
 				await tick();
 				loaded = true;
 			} else {
-				await goto('/');
+				await goto('/kael/');
 			}
 		})();
 	}
@@ -88,7 +88,7 @@
 		);
 		await chatId.set($page.params.id);
 		chat = await getChatByShareId(localStorage.token, $chatId).catch(async (error) => {
-			await goto('/');
+			await goto('/kael/');
 			return null;
 		});
 
