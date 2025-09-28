@@ -1,6 +1,6 @@
  
 from open_webui.views.retrieval import (
-    get_embedding_function,
+    get_embedding_function, get_ef, get_rf,
 )
 
 from .config import (
@@ -442,7 +442,7 @@ def init_app_config(app):
     #         RAG_RERANKING_MODEL_AUTO_UPDATE,
     #     )
     # except Exception as e:
-    #     log.error(f"Error updating models: {e}")
+    #     print(f"Error updating models: {e}")
     #     pass
     
     app.state.EMBEDDING_FUNCTION = get_embedding_function(

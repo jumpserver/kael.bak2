@@ -922,7 +922,6 @@ def save_docs_to_vector_db(
         embeddings = embedding_function(
             list(map(lambda x: x.replace("\n", " "), texts)),
             prefix=RAG_EMBEDDING_CONTENT_PREFIX,
-            user=user,
         )
 
         items = [
