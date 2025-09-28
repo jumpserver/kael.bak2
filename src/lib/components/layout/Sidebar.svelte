@@ -561,7 +561,7 @@
 			{/if}
 
 			<Folder
-				collapsible={!search}
+				collapsible={false}
 				className="px-2 mt-0.5"
 				name={$i18n.t('Chats')}
 				onAdd={() => {
@@ -715,6 +715,14 @@
 				<div class=" flex-1 flex flex-col overflow-y-auto scrollbar-hidden">
 					<div class="pt-1.5">
 						{#if $chats}
+							{#if $chats.length === 0}
+								<div class="px-3 py-8 text-center">
+									<div class="text-center text-4xl mb-3 opacity-60">💬</div>
+									<div class="text-center dark:text-gray-300 text-lg font-medium mb-2">
+										{$i18n.t('No conversations yet')}
+									</div>
+								</div>
+							{/if}
 							{#each $chats as chat, idx}
 								{#if idx === 0 || (idx > 0 && chat.time_range !== $chats[idx - 1].time_range)}
 									<div
@@ -777,26 +785,26 @@
 		</div>
 	</div>
 	<div class="px-2">
-			<div class="flex flex-col font-primary">
-				{#if $user !== undefined && $user !== null}
-					<button
-						class=" flex items-center rounded-xl py-2.5 px-2.5 w-full hover:bg-gray-100 dark:hover:bg-gray-900 transition"
-						on:click={() => {
-								showDropdown = !showDropdown;
-							}}
-					>
-						<div class=" self-center mr-3">
-							<img
-                            								src={generateInitialsImage($user?.name)}
-                            								class=" max-w-[30px] object-cover rounded-full"
-                            								alt="User profile"
-                            							/>
-						</div>
-						<div class=" self-center font-medium">{$user?.name}</div>
-					</button>
-				{/if}
-			</div>
+		<div class="flex flex-col font-primary">
+			{#if $user !== undefined && $user !== null}
+				<button
+					class=" flex items-center rounded-xl py-2.5 px-2.5 w-full hover:bg-gray-100 dark:hover:bg-gray-900 transition"
+					on:click={() => {
+						showDropdown = !showDropdown;
+					}}
+				>
+					<div class=" self-center mr-3">
+						<img
+							src={generateInitialsImage($user?.name)}
+							class=" max-w-[30px] object-cover rounded-full"
+							alt="User profile"
+						/>
+					</div>
+					<div class=" self-center font-medium">{$user?.name}</div>
+				</button>
+			{/if}
 		</div>
+	</div>
 </div>
 
 <style>
