@@ -759,7 +759,7 @@
 										>
 									</div>
 									<div
-										class="text-center text-gray-400 dark:text-gray-500 text-md font-medium mb-2"
+										class="text-center text-gray-400 dark:text-gray-500 text-lg font-medium mb-2"
 									>
 										{$i18n.t('No conversations yet')}
 									</div>

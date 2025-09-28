@@ -93,7 +93,7 @@
 		const hour = new Date().getHours();
 		if (hour < 12) {
 			greetingKey = 'Good morning, {{name}}';
-		} else if (hour < 18) {
+		} else if (hour < 17) {
 			greetingKey = 'Good afternoon, {{name}}';
 		} else {
 			greetingKey = 'Good evening, {{name}}';
