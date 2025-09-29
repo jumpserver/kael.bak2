@@ -772,7 +772,7 @@ ENABLE_COMMUNITY_SHARING = PersistentConfig(
 ENABLE_MESSAGE_RATING = PersistentConfig(
     "ENABLE_MESSAGE_RATING",
     "ui.enable_message_rating",
-    os.environ.get("ENABLE_MESSAGE_RATING", "True").lower() == "true",
+    os.environ.get("ENABLE_MESSAGE_RATING", "False").lower() == "true",
 )
 
 ENABLE_USER_WEBHOOKS = PersistentConfig(
