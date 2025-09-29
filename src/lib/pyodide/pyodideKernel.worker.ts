@@ -1,4 +1,5 @@
 import { loadPyodide, type PyodideInterface } from 'pyodide';
+import { WEBUI_BASE_URL } from '$lib/constants';
 
 declare global {
 	interface Window {
@@ -21,7 +22,7 @@ type CellState = {
 const initializePyodide = async () => {
 	// Ensure Pyodide is loaded once and cached in the worker's global scope
 	if (!self.pyodide) {
-		self.indexURL = '/pyodide/';
+		self.indexURL = `${WEBUI_BASE_URL}/pyodide/`;
 		self.stdout = '';
 		self.stderr = '';
 		self.cells = {};
