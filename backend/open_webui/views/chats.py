@@ -133,7 +133,10 @@ async def import_chat(form_data: ChatImportForm, user=Depends(get_verified_user)
 
 @router.get("/search", response_model=list[ChatTitleIdResponse])
 async def search_user_chats(
-        text: str, page: Optional[int] = None, user=Depends(get_verified_user)
+        text: str,
+        page: Optional[int] = None,
+        sid: str = Header(...),
+        user=Depends(get_verified_user)
 ):
     if page is None:
         page = 1
@@ -144,7 +147,7 @@ async def search_user_chats(
     chat_list = [
         ChatTitleIdResponse(**chat.model_dump())
         for chat in Chats.get_chats_by_user_id_and_search_text(
-            user.id, text, skip=skip, limit=limit
+            user.id, text, sid, skip=skip, limit=limit
         )
     ]
 
@@ -437,13 +440,18 @@ async def send_chat_message_event_by_id(
 
 
 @router.delete("/{_id}", response_model=bool)
-async def delete_chat_by_id(request: Request, _id: str, user=Depends(get_verified_user)):
-    chat = Chats.get_chat_by_id(_id)
-    for tag in chat.meta.get("tags", []):
-        if Chats.count_chats_by_tag_name_and_user_id(tag, user.id) == 1:
-            Tags.delete_tag_by_name_and_user_id(tag, user.id)
+async def delete_chat_by_id(
+        request: Request,
+        _id: str,
+        sid: str = Header(...),
+        user=Depends(get_verified_user)
+):
+    # chat = Chats.get_chat_by_id(_id)
+    # for tag in chat['meta'].get("tags", []):
+    #     if Chats.count_chats_by_tag_name_and_user_id(tag, user.id) == 1:
+    #         Tags.delete_tag_by_name_and_user_id(tag, user.id)
 
-    result = Chats.delete_chat_by_id(_id)
+    result = Chats.delete_chat_by_id(_id, sid)
 
     return result
 
@@ -508,7 +516,7 @@ async def clone_chat_by_id(
         }
 
         chat = Chats.insert_new_chat(ChatForm(**{"chat": updated_chat}), sid, request, user)
-        return ChatResponse(**chat.model_dump())
+        return ChatResponse(**chat)
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_MESSAGES.DEFAULT()

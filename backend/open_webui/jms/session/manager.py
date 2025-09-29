@@ -16,11 +16,11 @@ class SessionManager:
     def get_store(self):
         return self.store
 
-    def get_jms_session(self, s_id: str):
-        return self.store.get(str(s_id), {}).get("jms_session")
+    def get_jms_session(self, session_id: str):
+        return self.store.get(str(session_id), {}).get("jms_session")
 
-    def get_chat(self, s_id: str) -> dict:
-        return self.store.get(str(s_id), {}).get("chat", {})
+    def get_chat(self, session_id: str) -> dict:
+        return self.store.get(str(session_id), {}).get("chat", {})
 
 
 session_manager = SessionManager()
