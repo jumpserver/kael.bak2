@@ -16,7 +16,6 @@ from sqlalchemy import or_, and_, text
 from jms import SessionHandler
 from jms.wisp.protobuf.common_pb2 import User
 
-
 ####################
 # Chat DB Schema
 ####################
@@ -134,17 +133,17 @@ class ChatTable:
         user_id = jms_session.session.user_id
 
         chat = {
-           'id': session_id,
-           'user_id': user_id,
-           'title': form_data.chat['title'] if 'title' in form_data.chat else 'New Chat',
-           'chat': form_data.chat,
-           'created_at': int(time.time()),
-           'updated_at': int(time.time()),
-           'share_id': None,
-           'archived': False,
-           'pinned': False,
-           'meta': {},
-           'folder_id': None,
+            'id': session_id,
+            'user_id': user_id,
+            'title': form_data.chat['title'] if 'title' in form_data.chat else 'New Chat',
+            'chat': form_data.chat,
+            'created_at': int(time.time()),
+            'updated_at': int(time.time()),
+            'share_id': None,
+            'archived': False,
+            'pinned': False,
+            'meta': {},
+            'folder_id': None,
         }
         session_manager.register_jms_session(jms_session, chat)
         jms_session.active_session()
@@ -167,7 +166,7 @@ class ChatTable:
                     "updated_at": int(time.time()),
                 }
             )
-        
+
             result = Chat(**chat.model_dump())
             db.add(result)
             db.commit()
@@ -618,37 +617,6 @@ class ChatTable:
             for chat in filtered
         ]
 
-        # with get_db() as db:
-        #     query = db.query(Chat).filter_by(user_id=user_id).filter_by(folder_id=None)
-        #     query = query.filter(or_(Chat.pinned == False, Chat.pinned == None))
-        #
-        #     if not include_archived:
-        #         query = query.filter_by(archived=False)
-        #
-        #     query = query.order_by(Chat.updated_at.desc()).with_entities(
-        #         Chat.id, Chat.title, Chat.updated_at, Chat.created_at
-        #     )
-        #
-        #     if skip:
-        #         query = query.offset(skip)
-        #     if limit:
-        #         query = query.limit(limit)
-        #
-        #     all_chats = query.all()
-        #
-        #     # result has to be destrctured from sqlalchemy `row` and mapped to a dict since the `ChatModel`is not the returned dataclass.
-        #     return [
-        #         ChatTitleIdResponse.model_validate(
-        #             {
-        #                 "id": chat[0],
-        #                 "title": chat[1],
-        #                 "updated_at": chat[2],
-        #                 "created_at": chat[3],
-        #             }
-        #         )
-        #         for chat in all_chats
-        #     ]
-
     # TODO
     def get_chat_by_share_id(self, id: str) -> Optional[ChatModel]:
         try:
@@ -672,24 +640,11 @@ class ChatTable:
 
         return chat_dict
 
-        # with get_db() as db:
-        #     all_chats = (
-        #         db.query(Chat)
-        #         .filter(Chat.id.in_(chat_ids))
-        #         .filter_by(archived=False)
-        #         .order_by(Chat.updated_at.desc())
-        #         .all()
-        #     )
-        #     return [ChatModel.model_validate(chat) for chat in all_chats]
-
     @staticmethod
     def get_chat_by_id(_id: str):
         try:
             chat_dict = session_manager.get_chat(_id)
             return chat_dict
-            # with get_db() as db:
-            #     chat = db.get(Chat, id)
-            #     return ChatModel.model_validate(chat)
         except Exception:
             return None
 
@@ -737,6 +692,7 @@ class ChatTable:
             self,
             user_id: str,
             search_text: str,
+            sid: str,
             include_archived: bool = False,
             skip: int = 0,
             limit: int = 60,
@@ -1072,67 +1028,76 @@ class ChatTable:
         except Exception:
             return False
 
+    def delete_chat_by_id(self, _id: str, sid: str) -> bool:
+        try:
+            if not sid:
+                return False
 
-def delete_chat_by_id(self, id: str) -> bool:
-    try:
-        with get_db() as db:
-            db.query(Chat).filter_by(id=id).delete()
-            db.commit()
+            session_store = session_manager.get_store()
 
-            return True and self.delete_shared_chat_by_chat_id(id)
-    except Exception:
-        return False
+            for store in session_store.values():
+                jms_session = store.get('jms_session')
+                if jms_session and jms_session.sid == sid and jms_session.session.id == _id:
+                    session_manager.unregister_jms_session(jms_session)
+                    return True
+            else:
+                return False
 
+                # with get_db() as db:
+                #     db.query(Chat).filter_by(id=id).delete()
+                #     db.commit()
 
-def delete_chat_by_id_and_user_id(self, id: str, user_id: str) -> bool:
-    try:
-        with get_db() as db:
-            db.query(Chat).filter_by(id=id, user_id=user_id).delete()
-            db.commit()
+                # return True and self.delete_shared_chat_by_chat_id(id)
 
-            return True and self.delete_shared_chat_by_chat_id(id)
-    except Exception:
-        return False
+        except Exception:
+            return False
 
+    def delete_chat_by_id_and_user_id(self, id: str, user_id: str) -> bool:
+        try:
+            with get_db() as db:
+                db.query(Chat).filter_by(id=id, user_id=user_id).delete()
+                db.commit()
 
-def delete_chats_by_user_id(self, user_id: str) -> bool:
-    try:
-        with get_db() as db:
-            self.delete_shared_chats_by_user_id(user_id)
+                return True and self.delete_shared_chat_by_chat_id(id)
+        except Exception:
+            return False
 
-            db.query(Chat).filter_by(user_id=user_id).delete()
-            db.commit()
+    def delete_chats_by_user_id(self, user_id: str) -> bool:
+        try:
+            with get_db() as db:
+                self.delete_shared_chats_by_user_id(user_id)
 
-            return True
-    except Exception:
-        return False
+                db.query(Chat).filter_by(user_id=user_id).delete()
+                db.commit()
 
+                return True
+        except Exception:
+            return False
 
-def delete_chats_by_user_id_and_folder_id(
-        self, user_id: str, folder_id: str
-) -> bool:
-    try:
-        with get_db() as db:
-            db.query(Chat).filter_by(user_id=user_id, folder_id=folder_id).delete()
-            db.commit()
+    def delete_chats_by_user_id_and_folder_id(
+            self, user_id: str, folder_id: str
+    ) -> bool:
+        try:
+            with get_db() as db:
+                db.query(Chat).filter_by(user_id=user_id, folder_id=folder_id).delete()
+                db.commit()
 
-            return True
-    except Exception:
-        return False
+                return True
+        except Exception:
+            return False
 
+    def delete_shared_chats_by_user_id(self, user_id: str) -> bool:
+        try:
+            with get_db() as db:
+                chats_by_user = db.query(Chat).filter_by(user_id=user_id).all()
+                shared_chat_ids = [f"shared-{chat.id}" for chat in chats_by_user]
 
-def delete_shared_chats_by_user_id(self, user_id: str) -> bool:
-    try:
-        with get_db() as db:
-            chats_by_user = db.query(Chat).filter_by(user_id=user_id).all()
-            shared_chat_ids = [f"shared-{chat.id}" for chat in chats_by_user]
+                db.query(Chat).filter(Chat.user_id.in_(shared_chat_ids)).delete()
+                db.commit()
 
-            db.query(Chat).filter(Chat.user_id.in_(shared_chat_ids)).delete()
-            db.commit()
-
-            return True
-    except Exception:
-        return False
+                return True
+        except Exception:
+            return False
 
 
 Chats = ChatTable()
