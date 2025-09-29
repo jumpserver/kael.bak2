@@ -242,3 +242,12 @@
 		</div>
 	{/if}
 </div>
+
+<style>
+	#chat-search {
+		transition: all 0.2s ease-in-out;
+		border-radius: 3px;
+		background-color: #eeeeee;
+		margin: 0 8px;
+	}
+</style>
