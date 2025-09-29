@@ -720,7 +720,7 @@
 									<!-- NoData Icon -->
 									<div class="flex justify-center mb-4">
 										<svg
-											width="100"
+											width="80"
 											height="90"
 											viewBox="0 0 184 152"
 											xmlns="http://www.w3.org/2000/svg"

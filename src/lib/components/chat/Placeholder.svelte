@@ -121,7 +121,8 @@
 			<div class="flex flex-row justify-center gap-3 @sm:gap-3.5 w-fit px-5">
 				<div class="relative size-10 justify-center">
 					<div
-						class="shadow-stroke relative flex h-full items-center justify-center rounded-full bg-white dark:bg-presentation dark:text-white text-black dark:after:shadow-none"
+						class="shadow-stroke relative flex h-full items-center justify-center 
+						rounded-full light:bg-white dark:bg-presentation dark:text-white text-black dark:after:shadow-none"
 					>
 						<ModelIcon name={models[selectedModelIdx]?.name} className="size-10" />
 					</div>
