@@ -90,7 +90,7 @@
 			{#if role === 'admin'}
 				<a
 					class="flex rounded-md py-2 px-3 w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-					href="/playground"
+					href="/kael/playground"
 					on:click={() => {
 						show = false;
 

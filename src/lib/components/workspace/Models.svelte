@@ -83,7 +83,7 @@
 			id: `${model.id}-clone`,
 			name: `${model.name} (Clone)`
 		});
-		goto('/workspace/models/create');
+		goto('/kael/workspace/models/create');
 	};
 
 	const shareModelHandler = async (model) => {
