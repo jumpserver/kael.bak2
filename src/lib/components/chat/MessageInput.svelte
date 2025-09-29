@@ -502,7 +502,7 @@
 						/>
 					{:else}
 						<form
-							class="w-full flex gap-1.5"
+							class="w-full flex gap-1.5 px-5"
 							on:submit|preventDefault={() => {
 								// check if selectedModels support image input
 								dispatch('submit', prompt);
@@ -510,12 +510,11 @@
 						>
 							<div
 								class="flex-1 flex flex-col relative w-full shadow-sm
-								focus-within:shadow-lg rounded-3xl border border-gray-50 dark:border-gray-850
+								focus-within:shadow-lg rounded-3xl border border-gray-100 dark:border-gray-850
 								hover:border-gray-200 focus-within:border-gray-200
 								hover:dark:border-gray-700
 								focus-within:dark:border-gray-700 transition-all duration-200 px-1 bg-white/90 dark:bg-gray-400/5 dark:text-gray-100"
 								dir={$settings?.chatDirection ?? 'auto'}
-								style="border-color: #e3e3e3;"
 							>
 								{#if files.length > 0}
 									<div class="mx-2 mt-2.5 -mb-1 flex items-center flex-wrap gap-2">
