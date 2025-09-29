@@ -1,4 +1,5 @@
 import { loadPyodide, type PyodideInterface } from 'pyodide';
+import { WEBUI_BASE_URL } from '$lib/constants';
 
 declare global {
 	interface Window {
@@ -19,7 +20,7 @@ async function loadPyodideAndPackages(packages: string[] = []) {
 	self.result = null;
 
 	self.pyodide = await loadPyodide({
-		indexURL: '/pyodide/',
+		indexURL: `${WEBUI_BASE_URL}/pyodide/`,
 		stdout: (text) => {
 			console.log('Python output:', text);
 
