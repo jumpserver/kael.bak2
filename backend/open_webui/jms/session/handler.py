@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from datetime import datetime
-import socketio
 
 from jms.wisp.protobuf import service_pb2
 from jms.wisp.exceptions import WispError
@@ -16,9 +15,8 @@ logger.setLevel(SRC_LOG_LEVELS["WISP"])
 
 
 class JMSSession(BaseWisp):
-    def __init__(self, session: Session, sio: socketio.AsyncServer, sid: str):
+    def __init__(self, session: Session, sid: str):
         super().__init__()
-        self.sio = sio
         self.sid = sid
         self.session = session
 
@@ -26,10 +24,8 @@ class JMSSession(BaseWisp):
         self.replay_handler = None
 
     def active_session(self) -> None:
-        self.replay_handler = ReplayHandler(self.session)
-        self.command_handler = CommandHandler(
-            self.session, self.sio, self.sid
-        )
+        self.replay_handler = ReplayHandler(self.session.id)
+        self.command_handler = CommandHandler(self.session)
 
     async def close_session(self) -> None:
         req = service_pb2.SessionFinishRequest(
@@ -53,16 +49,15 @@ class JMSSession(BaseWisp):
 
 class SessionHandler(BaseWisp):
 
-    def __init__(self, sio: socketio.AsyncServer, sid: str, ip: str, user: User):
+    def __init__(self, sid: str, ip: str, user: User):
         super().__init__()
-        self.sio = sio
         self.sid = sid
         self.remote_address = ip
         self.user = user
 
     def create_new_session(self, ai_model: str, account_data: dict) -> JMSSession:
         session = self.create_session(ai_model, account_data)
-        jms_session = JMSSession(session, self.sio, self.sid)
+        jms_session = JMSSession(session, self.sid)
         return jms_session
 
     def create_session(self, ai_model: str, account_data: dict) -> Session:
