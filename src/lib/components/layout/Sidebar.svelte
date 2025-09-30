@@ -716,7 +716,7 @@
 					<div class="pt-1.5">
 						{#if $chats}
 							{#if $chats.length === 0}
-								<div class="px-3 py-8 text-center">
+								<div class="px-5 py-8 text-center opacity-80">
 									<!-- NoData Icon -->
 									<div class="flex justify-center mb-4">
 										<svg

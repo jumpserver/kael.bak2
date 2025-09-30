@@ -230,7 +230,7 @@ from open_webui.env import (
 def init_app_config(app):
     app.state.config = AppConfig()
     
-    app.state.WEBUI_NAME = 'JumpServer Chat'
+    app.state.WEBUI_NAME = 'JumpServer Chat & Open WebUI'
     
     ########################################
     #

@@ -106,9 +106,7 @@ for source in log_sources:
 
 log.setLevel(SRC_LOG_LEVELS["CONFIG"])
 
-WEBUI_NAME = os.environ.get("WEBUI_NAME", "JumpServer Chat")
-if WEBUI_NAME != "JumpServer Chat":
-    WEBUI_NAME += " (JumpServer Chat)"
+WEBUI_NAME = os.environ.get("WEBUI_NAME", "JumpServer Chat & Open WebUI")
 
 WEBUI_FAVICON_URL = "https://openwebui.com/favicon.png"
 
