@@ -110,7 +110,6 @@ class ChatTitleIdResponse(BaseModel):
 class ChatTable:
 
     def insert_new_chat(self, form_data: ChatForm, sid: str, request: Request, user: User):
-        from open_webui.socket.main import sio
         client_host, client_port = request.client or (None, None)
         ip = client_host
 
@@ -121,7 +120,7 @@ class ChatTable:
         elif xri:
             ip = xri.strip()
 
-        session_handler = SessionHandler(sio=sio, sid=sid, ip=ip, user=user)
+        session_handler = SessionHandler(sid=sid, ip=ip, user=user)
 
         account_handler = AccountChatHandler()
 

@@ -20,9 +20,9 @@ class ReplayHandler(BaseWisp):
     DEFAULT_ENCODING = "utf-8"
     REPLAY_DIR = os.path.join(PROJECT_DIR, 'data/replay')
 
-    def __init__(self, session: Session):
+    def __init__(self, session_id: str):
         super().__init__()
-        self.session = session
+        self.session_id = session_id
         self.replay_writer = None
         self.file_writer = None
         self.file = None
@@ -31,7 +31,7 @@ class ReplayHandler(BaseWisp):
     def build_file(self):
         self.ensure_replay_dir()
 
-        replay_file_path = os.path.join(self.REPLAY_DIR, f"{self.session.id}.cast")
+        replay_file_path = os.path.join(self.REPLAY_DIR, f"{self.session_id}.cast")
         file = Path(replay_file_path)
 
         try:
@@ -78,7 +78,7 @@ class ReplayHandler(BaseWisp):
         try:
             self.file_writer.close()
             replay_request = service_pb2.ReplayRequest(
-                session_id=self.session.id,
+                session_id=self.session_id,
                 replay_file_path=self.file.absolute().as_posix()
             )
             resp = self.stub.UploadReplayFile(replay_request)
