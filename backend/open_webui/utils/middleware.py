@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 from fastapi import Request
 from starlette.responses import StreamingResponse
 
-from jms import session_manager, CommandRecord
+from jms import CommandRecord, chat_manager, ReplayHandler, CommandHandler
 from open_webui.models.chats import Chats
 from open_webui.models.users import Users
 from open_webui.socket.main import (
@@ -908,11 +908,7 @@ async def process_chat_payload(request, form_data, user, metadata, model):
         )
 
     chat_id = metadata.get("chat_id", '')
-    jms_session = session_manager.get_jms_session(chat_id)
-    command_record = CommandRecord(input=user_message)
-    jms_session.command_handler.command_record = command_record
-
-    asyncio.create_task(jms_session.replay_handler.write_input(command_record.input))
+    asyncio.create_task(ReplayHandler(chat_id).write_input(user_message))
     return form_data, metadata, events
 
 
@@ -2167,9 +2163,16 @@ async def process_chat_response(
                 }
 
                 chat_id = metadata.get("chat_id", '')
-                jms_session = session_manager.get_jms_session(chat_id)
-                jms_session.command_handler.command_record.output = data['content']
-                asyncio.create_task(jms_session.replay_handler.write_input(data['content']))
+
+                chat_data = chat_manager.retrieve(chat_id)
+                user_message = get_last_user_message(form_data["messages"])
+
+                command_handler = CommandHandler(chat_id, chat_data['session_info'])
+                command_handler.command_record = CommandRecord(
+                    input=user_message, output=data['content']
+                )
+
+                asyncio.create_task(ReplayHandler(chat_id).write_input(data['content']))
 
                 if not ENABLE_REALTIME_CHAT_SAVE:
                     # Save message in the database
@@ -2205,7 +2208,7 @@ async def process_chat_response(
                 )
 
                 await background_tasks_handler()
-                asyncio.create_task(jms_session.command_handler.record_command())
+                asyncio.create_task(command_handler.record_command())
             except asyncio.CancelledError:
                 log.warning("Task was cancelled!")
                 await event_emitter({"type": "task-cancelled"})

@@ -191,7 +191,7 @@ async def get_chats_by_folder_id(folder_id: str, user=Depends(get_verified_user)
 @router.get("/pinned", response_model=list[ChatResponse])
 async def get_user_pinned_chats(user=Depends(get_verified_user)):
     return [
-        ChatResponse(**chat.model_dump())
+        ChatResponse(**chat)
         for chat in Chats.get_pinned_chats_by_user_id(user.id)
     ]
 
@@ -204,7 +204,7 @@ async def get_user_pinned_chats(user=Depends(get_verified_user)):
 @router.get("/all", response_model=list[ChatResponse])
 async def get_user_chats(user=Depends(get_verified_user)):
     return [
-        ChatResponse(**chat.model_dump())
+        ChatResponse(**chat)
         for chat in Chats.get_chats_by_user_id(user.id)
     ]
 
@@ -217,7 +217,7 @@ async def get_user_chats(user=Depends(get_verified_user)):
 @router.get("/all/archived", response_model=list[ChatResponse])
 async def get_user_archived_chats(user=Depends(get_verified_user)):
     return [
-        ChatResponse(**chat.model_dump())
+        ChatResponse(**chat)
         for chat in Chats.get_archived_chats_by_user_id(user.id)
     ]
 

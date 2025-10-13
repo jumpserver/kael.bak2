@@ -3,7 +3,7 @@ from typing import Any
 
 from jms.wisp.exceptions import WispError
 from open_webui.env import SRC_LOG_LEVELS
-from wisp.protobuf import service_pb2
+from jms.wisp.protobuf import service_pb2
 
 from .base import BaseWisp
 

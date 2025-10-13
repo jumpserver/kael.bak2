@@ -6,8 +6,7 @@ from jms.wisp.protobuf import service_pb2
 from jms.wisp.exceptions import WispError
 from jms.wisp.protobuf.common_pb2 import Session, User
 from open_webui.env import SRC_LOG_LEVELS
-from ..replay import ReplayHandler
-from ..command import CommandHandler
+from ..account import AccountChatHandler
 from ..base import BaseWisp
 
 logger = logging.getLogger(__name__)
@@ -22,10 +21,6 @@ class JMSSession(BaseWisp):
 
         self.command_handler = None
         self.replay_handler = None
-
-    def active_session(self) -> None:
-        self.replay_handler = ReplayHandler(self.session.id)
-        self.command_handler = CommandHandler(self.session)
 
     async def close_session(self) -> None:
         req = service_pb2.SessionFinishRequest(
@@ -55,12 +50,15 @@ class SessionHandler(BaseWisp):
         self.remote_address = ip
         self.user = user
 
-    def create_new_session(self, ai_model: str, account_data: dict) -> JMSSession:
-        session = self.create_session(ai_model, account_data)
+    def create_new_session(self, chat_model: str) -> JMSSession:
+        account_handler = AccountChatHandler()
+        account_data = account_handler.get_account()
+
+        session = self.create_session(chat_model, account_data)
         jms_session = JMSSession(session, self.sid)
         return jms_session
 
-    def create_session(self, ai_model: str, account_data: dict) -> Session:
+    def create_session(self, chat_model: str, account_data: dict) -> Session:
         req_session = Session(
             user_id=self.user.id,
             user=f'{self.user.name}({self.user.username})',
@@ -70,7 +68,7 @@ class SessionHandler(BaseWisp):
             asset_id=account_data['asset']['id'],
             asset=account_data['asset']['name'],
             login_from=Session.LoginFrom.WT,
-            protocol=ai_model,
+            protocol=chat_model,
             date_start=int(datetime.now().timestamp()),
             remote_addr=self.remote_address,
         )

@@ -871,13 +871,13 @@ TITLE_GENERATION_PROMPT_TEMPLATE = PersistentConfig(
 )
 
 DEFAULT_TITLE_GENERATION_PROMPT_TEMPLATE = """### Task
-Generate a concise 3–5 word chat title with exactly one fitting emoji.
+Generate a concise 3–5 word chat title.
 
 ### Hard Rules
 - Output MUST be a single raw JSON object on one line: { "title": "..." }
 - No extra text before/after JSON. No code fences. No trailing commas.
-- Title length: 3–5 words total (emoji not counted as a word).
-- Include exactly ONE emoji at the start or end. Do NOT use multiple emojis.
+- Title length: 3–5 words total.
+- Do NOT include emojis, punctuation at the ends, or decorative symbols.
 - No quotes inside the title text, no colons (:), no brackets, no hashtags.
 - Language: Use the chat’s primary language; default to English if mixed.
 - Be accurate and specific, not poetic or clickbait.
@@ -890,13 +890,13 @@ Generate a concise 3–5 word chat title with exactly one fitting emoji.
 
 ### Output Format
 Return exactly:
-{ "title": "<emoji?> <3–5 words in primary language>" }
+{ "title": "<3–5 words in primary language>" }
 
 ### Examples
-- { "title": "📉 Stock Market Trends" }
-- { "title": "🍪 Perfect Chocolate Chip Recipe" }
-- { "title": "Artificial Intelligence in Healthcare 🤖" }
-- { "title": "🎮 Video Game Development Insights" }
+- { "title": "Stock Market Trends" }
+- { "title": "Perfect Chocolate Chip Recipe" }
+- { "title": "Artificial Intelligence in Healthcare" }
+- { "title": "Video Game Development Insights" }
 
 ### Chat History
 <chat_history>

@@ -172,9 +172,8 @@
 	const initChatList = async () => {
 		// Reset pagination variables
 		// tags.set(await getAllTags(localStorage.token));
-		// pinnedChats.set(await getPinnedChatList(localStorage.token));
+		pinnedChats.set(await getPinnedChatList(localStorage.token));
 		tags.set([]);
-		pinnedChats.set([]);
 		initFolders();
 
 		currentChatPage.set(1);
