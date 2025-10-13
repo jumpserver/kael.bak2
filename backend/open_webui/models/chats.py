@@ -4,7 +4,7 @@ import uuid
 from typing import Optional, List
 from fastapi import Request
 
-from jms import session_manager, AccountChatHandler
+from jms import session_manager, chat_manager
 from open_webui.internal.db import Base, get_db
 from open_webui.models.tags import TagModel, Tags
 from open_webui.env import SRC_LOG_LEVELS
@@ -97,6 +97,7 @@ class ChatResponse(BaseModel):
     archived: bool
     pinned: Optional[bool] = False
     meta: dict = {}
+    session_info: dict = {}
     folder_id: Optional[str] = None
 
 
@@ -108,8 +109,8 @@ class ChatTitleIdResponse(BaseModel):
 
 
 class ChatTable:
-
-    def insert_new_chat(self, form_data: ChatForm, sid: str, request: Request, user: User):
+    @staticmethod
+    def insert_new_chat(form_data: ChatForm, sid: str, request: Request, user: User):
         client_host, client_port = request.client or (None, None)
         ip = client_host
 
@@ -122,55 +123,25 @@ class ChatTable:
 
         session_handler = SessionHandler(sid=sid, ip=ip, user=user)
 
-        account_handler = AccountChatHandler()
+        chat_model = form_data.chat.get("models", [None])[0] or ''
+        jms_session = session_handler.create_new_session(chat_model)
 
-        account_data = account_handler.get_account()
-        ai_model = form_data.chat.get("models", [None])[0] or ''
-        jms_session = session_handler.create_new_session(ai_model, account_data)
-
-        session_id = jms_session.session.id
-        user_id = jms_session.session.user_id
-
-        chat = {
-            'id': session_id,
-            'user_id': user_id,
+        data = {
+            'id': jms_session.session.id,
+            'user_id': jms_session.session.user_id,
             'title': form_data.chat['title'] if 'title' in form_data.chat else 'New Chat',
             'chat': form_data.chat,
-            'created_at': int(time.time()),
-            'updated_at': int(time.time()),
-            'share_id': None,
-            'archived': False,
-            'pinned': False,
-            'meta': {},
-            'folder_id': None,
+            'socket_id': sid,
+            'session_info': {
+                'org_id': jms_session.session.org_id,
+                'asset': jms_session.session.asset,
+                'account': jms_session.session.account,
+                'user': jms_session.session.user
+            }
         }
-        session_manager.register_jms_session(jms_session, chat)
-        jms_session.active_session()
+
+        chat = chat_manager.create(data)
         return chat
-
-        user_id = '123123123'
-
-        with get_db() as db:
-            chat = ChatModel(
-                **{
-                    "id": str(uuid.uuid4()),
-                    "user_id": user_id,
-                    "title": (
-                        form_data.chat["title"]
-                        if "title" in form_data.chat
-                        else "New Chat"
-                    ),
-                    "chat": form_data.chat,
-                    "created_at": int(time.time()),
-                    "updated_at": int(time.time()),
-                }
-            )
-
-            result = Chat(**chat.model_dump())
-            db.add(result)
-            db.commit()
-            db.refresh(result)
-            return ChatModel.model_validate(result) if result else None
 
     # TODO
     def import_chat(
@@ -205,43 +176,26 @@ class ChatTable:
     @staticmethod
     def update_chat_by_id(_id: str, chat: dict):
         try:
-
-            chat_dict = session_manager.get_chat(_id)
-            chat_dict['chat'] = chat
-            chat_dict['title'] = chat["title"] if "title" in chat else "New Chat"
-            chat_dict['updated_at'] = int(time.time())
-
-            # with get_db() as db:
-            #     chat_item = db.get(Chat, id)
-            #     chat_item.chat = chat
-            #     chat_item.title = chat["title"] if "title" in chat else "New Chat"
-            #     chat_item.updated_at = int(time.time())
-            #     db.commit()
-            #     db.refresh(chat_item)
-
-            # return ChatModel.model_validate(chat_item)
+            chat_dict = chat_manager.update(
+                _id,
+                {
+                    'chat': chat,
+                    'title': chat["title"] if "title" in chat else "New Chat",
+                }
+            )
             return chat_dict
         except Exception:
             return None
 
     def update_chat_title_by_id(self, _id: str, title: str):
         try:
-            chat_dict = session_manager.get_chat(_id)
+            chat_dict = chat_manager.retrieve(_id)
             chat = chat_dict['chat']
             chat["title"] = title
             return self.update_chat_by_id(_id, chat)
 
         except Exception:
             return None
-
-        # chat = self.get_chat_by_id(_id)
-        # if chat is None:
-        #     return None
-        #
-        # chat = chat.chat
-        # chat["title"] = title
-        #
-        # return self.update_chat_by_id(_id, chat)
 
     def update_chat_tags_by_id(
             self, _id: str, tags: list[str], user
@@ -268,55 +222,37 @@ class ChatTable:
         #     self.add_chat_tag_by_id_and_user_id_and_tag_name(_id, user.id, tag_name)
         # return self.get_chat_by_id(_id)
 
-    def get_chat_title_by_id(self, _id: str) -> Optional[str]:
+    @staticmethod
+    def get_chat_title_by_id(_id: str) -> Optional[str]:
         try:
-            chat_dict = session_manager.get_chat(_id)
-            self.delete_all_tags_by_id_and_user_id(_id)
+            chat_dict = chat_manager.retrieve(_id)
             return chat_dict['chat'].get("title", "New Chat")
         except Exception:
             return None
 
-        # chat = self.get_chat_by_id(_id)
-        # if chat is None:
-        #     return None
-        #
-        # return chat.chat.get("title", "New Chat")
-
     def get_messages_by_chat_id(self, _id: str) -> Optional[dict]:
         try:
-            chat_dict = session_manager.get_chat(_id)
+            chat_dict = chat_manager.retrieve(_id)
             self.delete_all_tags_by_id_and_user_id(_id)
             return chat_dict['chat'].get("history", {}).get("messages", {}) or {}
         except Exception:
             return {}
 
-        # chat = self.get_chat_by_id(id)
-        # if chat is None:
-        #     return None
-        #
-        # return chat.chat.get("history", {}).get("messages", {}) or {}
-
     def get_message_by_id_and_message_id(
             self, _id: str, message_id: str
     ) -> Optional[dict]:
         try:
-            chat_dict = session_manager.get_chat(_id)
+            chat_dict = chat_manager.retrieve(_id)
             self.delete_all_tags_by_id_and_user_id(_id)
             return chat_dict['chat'].get("history", {}).get("messages", {}).get(message_id, {})
         except Exception:
             return {}
 
-        # chat = self.get_chat_by_id(id)
-        # if chat is None:
-        #     return None
-        #
-        # return chat.chat.get("history", {}).get("messages", {}).get(message_id, {})
-
     def upsert_message_to_chat_by_id_and_message_id(
             self, _id: str, message_id: str, message: dict
     ):
         try:
-            chat_dict = session_manager.get_chat(_id)
+            chat_dict = chat_manager.retrieve(_id)
 
             chat = chat_dict['chat']
             history = chat.get("history", {})
@@ -333,36 +269,14 @@ class ChatTable:
 
             chat["history"] = history
             return self.update_chat_by_id(_id, chat)
-
         except Exception:
             return None
-
-        # chat = self.get_chat_by_id(id)
-        # if chat is None:
-        #     return None
-        #
-        # chat = chat.chat
-        # history = chat.get("history", {})
-        #
-        # if message_id in history.get("messages", {}):
-        #     history["messages"][message_id] = {
-        #         **history["messages"][message_id],
-        #         **message,
-        #     }
-        # else:
-        #     history["messages"][message_id] = message
-        #
-        # history["currentId"] = message_id
-        #
-        # chat["history"] = history
-        # return self.update_chat_by_id(id, chat)
 
     def add_message_status_to_chat_by_id_and_message_id(
             self, _id: str, message_id: str, status: dict
     ):
         try:
-            chat_dict = session_manager.get_chat(_id)
-
+            chat_dict = chat_manager.retrieve(_id)
             chat = chat_dict['chat']
             history = chat.get("history", {})
 
@@ -377,22 +291,7 @@ class ChatTable:
         except Exception:
             return None
 
-        # chat = self.get_chat_by_id(_id)
-        # if chat is None:
-        #     return None
-        #
-        # chat = chat.chat
-        # history = chat.get("history", {})
-        #
-        # if message_id in history.get("messages", {}):
-        #     status_history = history["messages"][message_id].get("statusHistory", [])
-        #     status_history.append(status)
-        #     history["messages"][message_id]["statusHistory"] = status_history
-        #
-        # chat["history"] = history
-        # return self.update_chat_by_id(_id, chat)
-
-    # TODO
+    # TODO - needs optimization
     def insert_shared_chat_by_chat_id(self, chat_id: str) -> Optional[ChatModel]:
         with get_db() as db:
             # Get the existing chat to share
@@ -425,7 +324,7 @@ class ChatTable:
             db.commit()
             return shared_chat if (shared_result and result) else None
 
-    # TODO
+    # TODO - needs optimization
     def update_shared_chat_by_chat_id(self, chat_id: str) -> Optional[ChatModel]:
         try:
             with get_db() as db:
@@ -448,7 +347,7 @@ class ChatTable:
         except Exception:
             return None
 
-    # TODO
+    # TODO - needs optimization
     def delete_shared_chat_by_chat_id(self, chat_id: str) -> bool:
         try:
             with get_db() as db:
@@ -459,57 +358,40 @@ class ChatTable:
         except Exception:
             return False
 
-    # TODO
+    @staticmethod
     def update_chat_share_id_by_id(
-            self, id: str, share_id: Optional[str]
-    ) -> Optional[ChatModel]:
+            _id: str, share_id: Optional[str]
+    ):
         try:
-            with get_db() as db:
-                chat = db.get(Chat, id)
-                chat.share_id = share_id
-                db.commit()
-                db.refresh(chat)
-                return ChatModel.model_validate(chat)
-        except Exception:
-            return None
-
-    def toggle_chat_pinned_by_id(self, _id: str):
-        try:
-
-            chat_dict = session_manager.get_chat(_id)
-            chat_dict['pinned'] = not chat_dict.get('pinned', False)
-            chat_dict['updated_at'] = int(time.time())
+            data = {'share_id': share_id}
+            chat_dict = chat_manager.update(_id, data)
             return chat_dict
-
-            # with get_db() as db:
-            #     chat = db.get(Chat, id)
-            #     chat.pinned = not chat.pinned
-            #     chat.updated_at = int(time.time())
-            #     db.commit()
-            #     db.refresh(chat)
-            #     return ChatModel.model_validate(chat)
         except Exception:
             return None
 
-    def toggle_chat_archive_by_id(self, _id: str) -> Optional[ChatModel]:
+    @staticmethod
+    def toggle_chat_pinned_by_id(_id: str):
         try:
-
-            chat_dict = session_manager.get_chat(_id)
-            chat_dict['archived'] = not chat_dict.get('archived', False)
-            chat_dict['updated_at'] = int(time.time())
+            chat_dict = chat_manager.retrieve(_id)
+            pinned = not chat_dict.get('pinned', False)
+            data = {'pinned': pinned}
+            chat_dict = chat_manager.update(_id, data)
             return chat_dict
-
-            # with get_db() as db:
-            #     chat = db.get(Chat, id)
-            #     chat.archived = not chat.archived
-            #     chat.updated_at = int(time.time())
-            #     db.commit()
-            #     db.refresh(chat)
-            #     return ChatModel.model_validate(chat)
         except Exception:
             return None
 
-    # TODO
+    @staticmethod
+    def toggle_chat_archive_by_id(_id: str) -> Optional[ChatModel]:
+        try:
+            chat_dict = chat_manager.retrieve(_id)
+            archived = not chat_dict.get('archived', False)
+            data = {'archived': archived}
+            chat_dict = chat_manager.update(_id, data)
+            return chat_dict
+        except Exception:
+            return None
+
+    # TODO - needs optimization
     def archive_all_chats_by_user_id(self, user_id: str) -> bool:
         try:
             with get_db() as db:
@@ -519,91 +401,63 @@ class ChatTable:
         except Exception:
             return False
 
-    # TODO
+    @staticmethod
     def get_archived_chat_list_by_user_id(
-            self, user_id: str, skip: int = 0, limit: int = 50
-    ) -> list[ChatModel]:
-        with get_db() as db:
-            all_chats = (
-                db.query(Chat)
-                .filter_by(user_id=user_id, archived=True)
-                .order_by(Chat.updated_at.desc())
-                # .limit(limit).offset(skip)
-                .all()
-            )
-            return [ChatModel.model_validate(chat) for chat in all_chats]
+            user_id: str, skip: int = 0, limit: int = 50
+    ) -> list:
+        query = {
+            'archived': True,
+            'user_id': user_id,
+            'offset': skip,
+            'limit': limit,
+        }
 
-    # TODO
+        resp = chat_manager.list(query=query)
+        filtered = resp['results']
+        return filtered
+
+    @staticmethod
     def get_chat_list_by_user_id(
-            self,
             user_id: str,
             include_archived: bool = False,
             skip: int = 0,
             limit: int = 50,
-    ) -> list[ChatModel]:
-        with get_db() as db:
-            query = db.query(Chat).filter_by(user_id=user_id)
-            if not include_archived:
-                query = query.filter_by(archived=False)
+    ):
 
-            query = query.order_by(Chat.updated_at.desc())
+        query = {
+            'user_id': user_id,
+            'offset': skip,
+            'limit': limit,
+        }
 
-            if skip:
-                query = query.offset(skip)
-            if limit:
-                query = query.limit(limit)
+        if not include_archived:
+            query['archived'] = False
 
-            all_chats = query.all()
-            return [ChatModel.model_validate(chat) for chat in all_chats]
+        resp = chat_manager.list(query=query)
+        return resp['results']
 
-    # TODO
+    @staticmethod
     def get_chat_title_id_list_by_user_id(
-            self,
             user_id: str,
             sid: str = None,
             include_archived: bool = False,
-            skip: Optional[int] = None,
-            limit: Optional[int] = None,
+            skip: Optional[int] = 0,
+            limit: Optional[int] = 10,
     ) -> list[ChatTitleIdResponse]:
+        query = {
+            'pinned': False,
+            'user_id': user_id,
+            'folder_id': None,
+            'offset': skip,
+            'limit': limit,
+            'fields_size': 'mini'
+        }
 
-        if not sid:
-            return []
+        if not include_archived:
+            query['archived'] = False
 
-        session_store = session_manager.get_store()
-        filtered: List[dict] = []
-
-        for store in session_store.values():
-            jms_session = store.get('jms_session')
-            if not jms_session or jms_session.sid != sid:
-                continue
-
-            chat = store.get('chat')
-            if not chat:
-                continue
-
-            if chat.get('folder_id') is not None:
-                continue
-
-            if chat.get('pinned'):
-                continue
-
-            if not include_archived and chat.get('archived', False):
-                continue
-
-            filtered.append(chat)
-
-        def _time_key(c: dict):
-            return c.get('updated_at') or c.get('created_at') or 0
-
-        filtered.sort(key=_time_key, reverse=True)
-
-        start = 0 if skip is None else max(0, int(skip))
-
-        if limit is None:
-            filtered = filtered[start:]
-        else:
-            filtered = filtered[start:start + max(0, int(limit))]
-
+        resp = chat_manager.list(query=query)
+        filtered = resp['results']
         return [
             ChatTitleIdResponse.model_validate(
                 {
@@ -617,75 +471,80 @@ class ChatTable:
         ]
 
     # TODO
-    def get_chat_by_share_id(self, id: str) -> Optional[ChatModel]:
+    def get_chat_by_share_id(self, _id: str) -> Optional[ChatModel]:
         try:
             with get_db() as db:
                 # it is possible that the shared link was deleted. hence,
                 # we check if the chat is still shared by checking if a chat with the share_id exists
-                chat = db.query(Chat).filter_by(share_id=id).first()
+                chat = db.query(Chat).filter_by(share_id=_id).first()
 
                 if chat:
-                    return self.get_chat_by_id(id)
+                    return self.get_chat_by_id(_id)
                 else:
                     return None
         except Exception:
             return None
 
+    @staticmethod
     def get_chat_list_by_chat_ids(
-            self, chat_ids: list[str], skip: int = 0, limit: int = 50
+            chat_ids: list[str],
+            skip: int = 0,
+            limit: int = 50
     ):
+        query = {
+            'archived': False,
+            'ids': ','.join(chat_ids),
+            'offset': skip,
+            'limit': limit,
+        }
 
-        chat_dict = [session_manager.get_chat(_id) for _id in chat_ids if session_manager.get_chat(_id)]
-
-        return chat_dict
+        resp = chat_manager.list(query=query)
+        filtered = resp['results']
+        return filtered
 
     @staticmethod
     def get_chat_by_id(_id: str):
         try:
-            chat_dict = session_manager.get_chat(_id)
-            return chat_dict
+            return chat_manager.retrieve(_id)
         except Exception:
             return None
 
-    def get_chat_by_id_and_user_id(self, _id: str, user_id: str):
+    @staticmethod
+    def get_chat_by_id_and_user_id(_id: str, user_id: str):
         try:
-            chat_dict = session_manager.get_chat(_id)
+            chat_dict = chat_manager.retrieve(_id)
             return chat_dict
-            # with get_db() as db:
-            #     chat = db.query(Chat).filter_by(id=id, user_id=user_id).first()
-            #     return ChatModel.model_validate(chat)
         except Exception:
             return None
 
-    # TODO
-    def get_chats_by_user_id(self, user_id: str) -> list[ChatModel]:
-        with get_db() as db:
-            all_chats = (
-                db.query(Chat)
-                .filter_by(user_id=user_id)
-                .order_by(Chat.updated_at.desc())
-            )
-            return [ChatModel.model_validate(chat) for chat in all_chats]
+    @staticmethod
+    def get_chats_by_user_id(user_id: str) -> list[ChatModel]:
+        query = {
+            'user_id': user_id,
+        }
+        resp = chat_manager.list(query=query)
+        return resp
 
-    # TODO
-    def get_pinned_chats_by_user_id(self, user_id: str) -> list[ChatModel]:
-        with get_db() as db:
-            all_chats = (
-                db.query(Chat)
-                .filter_by(user_id=user_id, pinned=True, archived=False)
-                .order_by(Chat.updated_at.desc())
-            )
-            return [ChatModel.model_validate(chat) for chat in all_chats]
+    @staticmethod
+    def get_pinned_chats_by_user_id(user_id: str) -> list:
+        query = {
+            'archived': False,
+            'pinned': True,
+            'user_id': user_id,
+        }
 
-    # TODO
-    def get_archived_chats_by_user_id(self, user_id: str) -> list[ChatModel]:
-        with get_db() as db:
-            all_chats = (
-                db.query(Chat)
-                .filter_by(user_id=user_id, archived=True)
-                .order_by(Chat.updated_at.desc())
-            )
-            return [ChatModel.model_validate(chat) for chat in all_chats]
+        resp = chat_manager.list(query=query)
+        return resp
+
+    @staticmethod
+    def get_archived_chats_by_user_id(user_id: str) -> list:
+        query = {
+            'archived': True,
+            'user_id': user_id,
+        }
+
+        resp = chat_manager.list(query=query)
+        return resp
 
     def get_chats_by_user_id_and_search_text(
             self,
@@ -839,19 +698,18 @@ class ChatTable:
             # Validate and return chats
             return [ChatModel.model_validate(chat) for chat in all_chats]
 
-    # TODO
+    @staticmethod
     def get_chats_by_folder_id_and_user_id(
-            self, folder_id: str, user_id: str
-    ) -> list[ChatModel]:
-        with get_db() as db:
-            query = db.query(Chat).filter_by(folder_id=folder_id, user_id=user_id)
-            query = query.filter(or_(Chat.pinned == False, Chat.pinned == None))
-            query = query.filter_by(archived=False)
+            folder_id: str, user_id: str
+    ):
+        query = {
+            'folder_id': folder_id,
+            'user_id': user_id,
+            'pinned': False
+        }
 
-            query = query.order_by(Chat.updated_at.desc())
-
-            all_chats = query.all()
-            return [ChatModel.model_validate(chat) for chat in all_chats]
+        resp = chat_manager.list(query=query)
+        return resp
 
     # TODO
     def get_chats_by_folder_ids_and_user_id(
@@ -1008,46 +866,24 @@ class ChatTable:
     @staticmethod
     def delete_all_tags_by_id_and_user_id(_id: str) -> bool:
         try:
-            chat_dict = session_manager.get_chat(_id)
-            chat_dict['meta'] = {
-                **chat_dict['meta'],
-                "tags": [],
+            chat_dict = chat_manager.retrieve(_id)
+            data = {
+                'meta': {
+                    **chat_dict['meta'],
+                    "tags": [],
+                }
             }
 
-            # with get_db() as db:
-            #     chat = db.get(Chat, _id)
-            #     chat.meta = {
-            #         **chat.meta,
-            #         "tags": [],
-            #     }
-            #     db.commit()
-
+            chat_manager.update(_id, data)
             return True
-
         except Exception:
             return False
 
     def delete_chat_by_id(self, _id: str, sid: str) -> bool:
         try:
-            if not sid:
-                return False
-
-            session_store = session_manager.get_store()
-
-            for store in session_store.values():
-                jms_session = store.get('jms_session')
-                if jms_session and jms_session.sid == sid and jms_session.session.id == _id:
-                    session_manager.unregister_jms_session(jms_session)
-                    return True
-            else:
-                return False
-
-                # with get_db() as db:
-                #     db.query(Chat).filter_by(id=id).delete()
-                #     db.commit()
-
-                # return True and self.delete_shared_chat_by_chat_id(id)
-
+            chat_manager.destroy(_id)
+            return True
+            # return True and self.delete_shared_chat_by_chat_id(id)
         except Exception:
             return False
 
