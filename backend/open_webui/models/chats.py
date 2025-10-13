@@ -143,7 +143,7 @@ class ChatTable:
         chat = chat_manager.create(data)
         return chat
 
-    # TODO
+    # TODO - needs optimization
     def import_chat(
             self, user_id: str, form_data: ChatImportForm
     ) -> Optional[ChatModel]:
@@ -175,35 +175,25 @@ class ChatTable:
 
     @staticmethod
     def update_chat_by_id(_id: str, chat: dict):
-        try:
-            chat_dict = chat_manager.update(
-                _id,
-                {
-                    'chat': chat,
-                    'title': chat["title"] if "title" in chat else "New Chat",
-                }
-            )
-            return chat_dict
-        except Exception:
-            return None
+        chat_dict = chat_manager.update(
+            _id,
+            {
+                'chat': chat,
+                'title': chat["title"] if "title" in chat else "New Chat",
+            }
+        )
+        return chat_dict
 
     def update_chat_title_by_id(self, _id: str, title: str):
-        try:
-            chat_dict = chat_manager.retrieve(_id)
-            chat = chat_dict['chat']
-            chat["title"] = title
-            return self.update_chat_by_id(_id, chat)
-
-        except Exception:
-            return None
+        chat_dict = chat_manager.retrieve(_id)
+        chat = chat_dict['chat']
+        chat["title"] = title
+        return self.update_chat_by_id(_id, chat)
 
     def update_chat_tags_by_id(
             self, _id: str, tags: list[str], user
     ):
-        try:
-            return self.get_chat_by_id(_id)
-        except Exception:
-            return None
+        return self.get_chat_by_id(_id)
 
         # chat = self.get_chat_by_id(_id)
         # if chat is None:
@@ -224,72 +214,57 @@ class ChatTable:
 
     @staticmethod
     def get_chat_title_by_id(_id: str) -> Optional[str]:
-        try:
-            chat_dict = chat_manager.retrieve(_id)
-            return chat_dict['chat'].get("title", "New Chat")
-        except Exception:
-            return None
+        chat_dict = chat_manager.retrieve(_id)
+        return chat_dict['chat'].get("title", "New Chat")
 
     def get_messages_by_chat_id(self, _id: str) -> Optional[dict]:
-        try:
-            chat_dict = chat_manager.retrieve(_id)
-            self.delete_all_tags_by_id_and_user_id(_id)
-            return chat_dict['chat'].get("history", {}).get("messages", {}) or {}
-        except Exception:
-            return {}
+        chat_dict = chat_manager.retrieve(_id)
+        self.delete_all_tags_by_id_and_user_id(_id)
+        return chat_dict['chat'].get("history", {}).get("messages", {}) or {}
 
     def get_message_by_id_and_message_id(
             self, _id: str, message_id: str
     ) -> Optional[dict]:
-        try:
-            chat_dict = chat_manager.retrieve(_id)
-            self.delete_all_tags_by_id_and_user_id(_id)
-            return chat_dict['chat'].get("history", {}).get("messages", {}).get(message_id, {})
-        except Exception:
-            return {}
+        chat_dict = chat_manager.retrieve(_id)
+        self.delete_all_tags_by_id_and_user_id(_id)
+        return chat_dict['chat'].get("history", {}).get("messages", {}).get(message_id, {})
 
     def upsert_message_to_chat_by_id_and_message_id(
             self, _id: str, message_id: str, message: dict
     ):
-        try:
-            chat_dict = chat_manager.retrieve(_id)
+        chat_dict = chat_manager.retrieve(_id)
 
-            chat = chat_dict['chat']
-            history = chat.get("history", {})
+        chat = chat_dict['chat']
+        history = chat.get("history", {})
 
-            if message_id in history.get("messages", {}):
-                history["messages"][message_id] = {
-                    **history["messages"][message_id],
-                    **message,
-                }
-            else:
-                history["messages"][message_id] = message
+        if message_id in history.get("messages", {}):
+            history["messages"][message_id] = {
+                **history["messages"][message_id],
+                **message,
+            }
+        else:
+            history["messages"][message_id] = message
 
-            history["currentId"] = message_id
+        history["currentId"] = message_id
 
-            chat["history"] = history
-            return self.update_chat_by_id(_id, chat)
-        except Exception:
-            return None
+        chat["history"] = history
+        return self.update_chat_by_id(_id, chat)
 
     def add_message_status_to_chat_by_id_and_message_id(
             self, _id: str, message_id: str, status: dict
     ):
-        try:
-            chat_dict = chat_manager.retrieve(_id)
-            chat = chat_dict['chat']
-            history = chat.get("history", {})
+        chat_dict = chat_manager.retrieve(_id)
+        chat = chat_dict['chat']
+        history = chat.get("history", {})
 
-            if message_id in history.get("messages", {}):
-                status_history = history["messages"][message_id].get("statusHistory", [])
-                status_history.append(status)
-                history["messages"][message_id]["statusHistory"] = status_history
+        if message_id in history.get("messages", {}):
+            status_history = history["messages"][message_id].get("statusHistory", [])
+            status_history.append(status)
+            history["messages"][message_id]["statusHistory"] = status_history
 
-            chat["history"] = history
-            return self.update_chat_by_id(_id, chat)
+        chat["history"] = history
+        return self.update_chat_by_id(_id, chat)
 
-        except Exception:
-            return None
 
     # TODO - needs optimization
     def insert_shared_chat_by_chat_id(self, chat_id: str) -> Optional[ChatModel]:
@@ -362,34 +337,25 @@ class ChatTable:
     def update_chat_share_id_by_id(
             _id: str, share_id: Optional[str]
     ):
-        try:
-            data = {'share_id': share_id}
-            chat_dict = chat_manager.update(_id, data)
-            return chat_dict
-        except Exception:
-            return None
+        data = {'share_id': share_id}
+        chat_dict = chat_manager.update(_id, data)
+        return chat_dict
 
     @staticmethod
     def toggle_chat_pinned_by_id(_id: str):
-        try:
-            chat_dict = chat_manager.retrieve(_id)
-            pinned = not chat_dict.get('pinned', False)
-            data = {'pinned': pinned}
-            chat_dict = chat_manager.update(_id, data)
-            return chat_dict
-        except Exception:
-            return None
+        chat_dict = chat_manager.retrieve(_id)
+        pinned = not chat_dict.get('pinned', False)
+        data = {'pinned': pinned}
+        chat_dict = chat_manager.update(_id, data)
+        return chat_dict
 
     @staticmethod
     def toggle_chat_archive_by_id(_id: str) -> Optional[ChatModel]:
-        try:
-            chat_dict = chat_manager.retrieve(_id)
-            archived = not chat_dict.get('archived', False)
-            data = {'archived': archived}
-            chat_dict = chat_manager.update(_id, data)
-            return chat_dict
-        except Exception:
-            return None
+        chat_dict = chat_manager.retrieve(_id)
+        archived = not chat_dict.get('archived', False)
+        data = {'archived': archived}
+        chat_dict = chat_manager.update(_id, data)
+        return chat_dict
 
     # TODO - needs optimization
     def archive_all_chats_by_user_id(self, user_id: str) -> bool:
@@ -511,11 +477,7 @@ class ChatTable:
 
     @staticmethod
     def get_chat_by_id_and_user_id(_id: str, user_id: str):
-        try:
-            chat_dict = chat_manager.retrieve(_id)
-            return chat_dict
-        except Exception:
-            return None
+        return chat_manager.retrieve(_id)
 
     @staticmethod
     def get_chats_by_user_id(user_id: str) -> list[ChatModel]:
@@ -862,7 +824,6 @@ class ChatTable:
         except Exception:
             return False
 
-    # TODO
     @staticmethod
     def delete_all_tags_by_id_and_user_id(_id: str) -> bool:
         try:
