@@ -145,7 +145,7 @@ async def search_user_chats(
     skip = (page - 1) * limit
 
     chat_list = [
-        ChatTitleIdResponse(**chat.model_dump())
+        ChatTitleIdResponse(**chat)
         for chat in Chats.get_chats_by_user_id_and_search_text(
             user.id, text, sid, skip=skip, limit=limit
         )
@@ -589,9 +589,9 @@ async def archive_chat_by_id(id: str, user=Depends(get_verified_user)):
 ############################
 
 
-@router.post("/{id}/share", response_model=Optional[ChatResponse])
-async def share_chat_by_id(id: str, user=Depends(get_verified_user)):
-    chat = Chats.get_chat_by_id_and_user_id(id, user.id)
+@router.post("/{_id}/share", response_model=Optional[ChatResponse])
+async def share_chat_by_id(_id: str, user=Depends(get_verified_user)):
+    chat = Chats.get_chat_by_id_and_user_id(_id, user.id)
     if chat:
         if chat.share_id:
             shared_chat = Chats.update_shared_chat_by_chat_id(chat.id)

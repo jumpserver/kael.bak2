@@ -59,7 +59,7 @@ class ChatHandler(BaseWisp):
             raise WispError(error_message)
         return json.loads(resp.body.decode())
 
-    def update(self, chat_id: str, data: dict, ) -> dict:
+    def update(self, chat_id: str, data: dict) -> dict:
         json_bytes = json.dumps(data).encode()
         req = HTTPRequest(
             method="PATCH",
@@ -73,11 +73,19 @@ class ChatHandler(BaseWisp):
             raise WispError(error_message)
         return json.loads(resp.body.decode())
 
-    def destroy(self, chat_id: str) -> None:
-        req = HTTPRequest(
-            method="DELETE",
-            path=f"{CHAT_URL}{chat_id}/",
-        )
+    def destroy(self, chat_id: str, data: dict = None) -> None:
+        if data is None:
+            req = HTTPRequest(
+                method="DELETE",
+                path=f"{CHAT_URL}{chat_id}/",
+            )
+        else:
+            json_bytes = json.dumps(data).encode()
+            req = HTTPRequest(
+                method="DELETE",
+                path=CHAT_URL,
+                body=json_bytes,
+            )
         resp = self.stub.CallAPI(req)
         if not resp.status.ok:
             error_message = f'Failed to delete chat {chat_id}: {resp.status.err}'
