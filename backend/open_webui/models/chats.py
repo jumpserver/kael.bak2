@@ -1,19 +1,15 @@
 import logging
 import time
 import uuid
-from typing import Optional, List
+from typing import Optional
 from fastapi import Request
+from pydantic import BaseModel, ConfigDict
+from sqlalchemy import BigInteger, Boolean, Column, String, Text, JSON, text
 
-from jms import session_manager, chat_manager
 from open_webui.internal.db import Base, get_db
 from open_webui.models.tags import TagModel, Tags
 from open_webui.env import SRC_LOG_LEVELS
-
-from pydantic import BaseModel, ConfigDict
-from sqlalchemy import BigInteger, Boolean, Column, String, Text, JSON
-from sqlalchemy import or_, and_, text
-
-from jms import SessionHandler
+from jms import SessionHandler, chat_manager
 from jms.wisp.protobuf.common_pb2 import User
 
 ####################
@@ -110,7 +106,7 @@ class ChatTitleIdResponse(BaseModel):
 
 class ChatTable:
     @staticmethod
-    def insert_new_chat(form_data: ChatForm, sid: str, request: Request, user: User):
+    def get_ip(request: Request):
         client_host, client_port = request.client or (None, None)
         ip = client_host
 
@@ -120,58 +116,57 @@ class ChatTable:
             ip = xff.split(",")[0].strip()
         elif xri:
             ip = xri.strip()
+        return ip
 
+    def insert_new_chat(self, form_data: ChatForm, sid: str, request: Request, user: User):
+        ip = self.get_ip(request)
         session_handler = SessionHandler(sid=sid, ip=ip, user=user)
-
         chat_model = form_data.chat.get("models", [None])[0] or ''
-        jms_session = session_handler.create_new_session(chat_model)
+        session = session_handler.create_session(chat_model)
 
         data = {
-            'id': jms_session.session.id,
-            'user_id': jms_session.session.user_id,
+            'id': session.id,
+            'user_id': session.user_id,
             'title': form_data.chat['title'] if 'title' in form_data.chat else 'New Chat',
             'chat': form_data.chat,
             'socket_id': sid,
             'session_info': {
-                'org_id': jms_session.session.org_id,
-                'asset': jms_session.session.asset,
-                'account': jms_session.session.account,
-                'user': jms_session.session.user
+                'org_id': session.org_id,
+                'asset': session.asset,
+                'account': session.account,
+                'user': session.user
             }
         }
 
         chat = chat_manager.create(data)
         return chat
 
-    # TODO - needs optimization
     def import_chat(
-            self, user_id: str, form_data: ChatImportForm
-    ) -> Optional[ChatModel]:
-        _id = str(uuid.uuid4())
-        with get_db() as db:
-            chat = ChatModel(
-                **{
-                    "id": _id,
-                    "user_id": user_id,
-                    "title": (
-                        form_data.chat["title"]
-                        if "title" in form_data.chat
-                        else "New Chat"
-                    ),
-                    "chat": form_data.chat,
-                    "meta": form_data.meta,
-                    "pinned": form_data.pinned,
-                    "folder_id": form_data.folder_id,
-                    "created_at": int(time.time()),
-                    "updated_at": int(time.time()),
-                }
-            )
+            self, form_data: ChatImportForm, sid: str, request: Request, user: User
+    ):
+        ip = self.get_ip(request)
+        session_handler = SessionHandler(sid=sid, ip=ip, user=user)
+        chat_model = form_data.chat.get("models", [None])[0] or ''
+        session = session_handler.create_session(chat_model)
 
-            result = Chat(**chat.model_dump())
-            db.add(result)
-            db.commit()
-            db.refresh(result)
-            return ChatModel.model_validate(result) if result else None
+        data = {
+            'id': session.id,
+            'user_id': session.user_id,
+            'title': form_data.chat['title'] if 'title' in form_data.chat else 'New Chat',
+            'chat': form_data.chat,
+            'meta': form_data.meta,
+            'pinned': form_data.pinned,
+            'folder_id': form_data.folder_id,
+            'socket_id': sid,
+            'session_info': {
+                'org_id': session.org_id,
+                'asset': session.asset,
+                'account': session.account,
+                'user': session.user
+            }
+        }
+        chat = chat_manager.create(data)
+        return chat
 
     @staticmethod
     def update_chat_by_id(_id: str, chat: dict):
@@ -265,72 +260,72 @@ class ChatTable:
         chat["history"] = history
         return self.update_chat_by_id(_id, chat)
 
-    # TODO - needs optimization
-    def insert_shared_chat_by_chat_id(self, chat_id: str) -> Optional[ChatModel]:
-        with get_db() as db:
-            # Get the existing chat to share
-            chat = db.get(Chat, chat_id)
-            # Check if the chat is already shared
-            if chat.share_id:
-                return self.get_chat_by_id_and_user_id(chat.share_id, "shared")
-            # Create a new chat with the same data, but with a new ID
-            shared_chat = ChatModel(
-                **{
-                    "id": str(uuid.uuid4()),
-                    "user_id": f"shared-{chat_id}",
-                    "title": chat.title,
-                    "chat": chat.chat,
-                    "created_at": chat.created_at,
-                    "updated_at": int(time.time()),
-                }
-            )
-            shared_result = Chat(**shared_chat.model_dump())
-            db.add(shared_result)
-            db.commit()
-            db.refresh(shared_result)
+    # # TODO - needs optimization
+    # def insert_shared_chat_by_chat_id(self, chat_id: str) -> Optional[ChatModel]:
+    #     with get_db() as db:
+    #         # Get the existing chat to share
+    #         chat = db.get(Chat, chat_id)
+    #         # Check if the chat is already shared
+    #         if chat.share_id:
+    #             return self.get_chat_by_id_and_user_id(chat.share_id, "shared")
+    #         # Create a new chat with the same data, but with a new ID
+    #         shared_chat = ChatModel(
+    #             **{
+    #                 "id": str(uuid.uuid4()),
+    #                 "user_id": f"shared-{chat_id}",
+    #                 "title": chat.title,
+    #                 "chat": chat.chat,
+    #                 "created_at": chat.created_at,
+    #                 "updated_at": int(time.time()),
+    #             }
+    #         )
+    #         shared_result = Chat(**shared_chat.model_dump())
+    #         db.add(shared_result)
+    #         db.commit()
+    #         db.refresh(shared_result)
+    #
+    #         # Update the original chat with the share_id
+    #         result = (
+    #             db.query(Chat)
+    #             .filter_by(id=chat_id)
+    #             .update({"share_id": shared_chat.id})
+    #         )
+    #         db.commit()
+    #         return shared_chat if (shared_result and result) else None
 
-            # Update the original chat with the share_id
-            result = (
-                db.query(Chat)
-                .filter_by(id=chat_id)
-                .update({"share_id": shared_chat.id})
-            )
-            db.commit()
-            return shared_chat if (shared_result and result) else None
-
-    # TODO - needs optimization
-    def update_shared_chat_by_chat_id(self, chat_id: str) -> Optional[ChatModel]:
-        try:
-            with get_db() as db:
-                chat = db.get(Chat, chat_id)
-                shared_chat = (
-                    db.query(Chat).filter_by(user_id=f"shared-{chat_id}").first()
-                )
-
-                if shared_chat is None:
-                    return self.insert_shared_chat_by_chat_id(chat_id)
-
-                shared_chat.title = chat.title
-                shared_chat.chat = chat.chat
-
-                shared_chat.updated_at = int(time.time())
-                db.commit()
-                db.refresh(shared_chat)
-
-                return ChatModel.model_validate(shared_chat)
-        except Exception:
-            return None
-
-    # TODO - needs optimization
-    def delete_shared_chat_by_chat_id(self, chat_id: str) -> bool:
-        try:
-            with get_db() as db:
-                db.query(Chat).filter_by(user_id=f"shared-{chat_id}").delete()
-                db.commit()
-
-                return True
-        except Exception:
-            return False
+    # # TODO - needs optimization
+    # def update_shared_chat_by_chat_id(self, chat_id: str) -> Optional[ChatModel]:
+    #     try:
+    #         with get_db() as db:
+    #             chat = db.get(Chat, chat_id)
+    #             shared_chat = (
+    #                 db.query(Chat).filter_by(user_id=f"shared-{chat_id}").first()
+    #             )
+    #
+    #             if shared_chat is None:
+    #                 return self.insert_shared_chat_by_chat_id(chat_id)
+    #
+    #             shared_chat.title = chat.title
+    #             shared_chat.chat = chat.chat
+    #
+    #             shared_chat.updated_at = int(time.time())
+    #             db.commit()
+    #             db.refresh(shared_chat)
+    #
+    #             return ChatModel.model_validate(shared_chat)
+    #     except Exception:
+    #         return None
+    #
+    # # TODO - needs optimization
+    # def delete_shared_chat_by_chat_id(self, chat_id: str) -> bool:
+    #     try:
+    #         with get_db() as db:
+    #             db.query(Chat).filter_by(user_id=f"shared-{chat_id}").delete()
+    #             db.commit()
+    #
+    #             return True
+    #     except Exception:
+    #         return False
 
     @staticmethod
     def update_chat_share_id_by_id(
@@ -435,20 +430,11 @@ class ChatTable:
             for chat in filtered
         ]
 
-    # TODO
-    def get_chat_by_share_id(self, _id: str) -> Optional[ChatModel]:
-        try:
-            with get_db() as db:
-                # it is possible that the shared link was deleted. hence,
-                # we check if the chat is still shared by checking if a chat with the share_id exists
-                chat = db.query(Chat).filter_by(share_id=_id).first()
-
-                if chat:
-                    return self.get_chat_by_id(_id)
-                else:
-                    return None
-        except Exception:
-            return None
+    def get_chat_by_share_id(self, _id: str):
+        filtered = chat_manager.list(query={'share_id': _id})
+        if len(filtered) > 0:
+            return self.get_chat_by_id(_id)
+        return None
 
     @staticmethod
     def get_chat_list_by_chat_ids(
@@ -469,10 +455,7 @@ class ChatTable:
 
     @staticmethod
     def get_chat_by_id(_id: str):
-        try:
-            return chat_manager.retrieve(_id)
-        except Exception:
-            return None
+        return chat_manager.retrieve(_id)
 
     @staticmethod
     def get_chat_by_id_and_user_id(_id: str, user_id: str):
@@ -662,6 +645,7 @@ class ChatTable:
             log.debug(f"all_chats: {all_chats}")
             return [ChatModel.model_validate(chat) for chat in all_chats]
 
+    # TODO
     def add_chat_tag_by_id_and_user_id_and_tag_name(
             self, id: str, user_id: str, tag_name: str
     ) -> Optional[ChatModel]:
@@ -722,23 +706,22 @@ class ChatTable:
         #
         #     return count
 
-    # TODO
+    @staticmethod
     def delete_tag_by_id_and_user_id_and_tag_name(
-            self, id: str, user_id: str, tag_name: str
+            _id: str, user_id: str, tag_name: str
     ) -> bool:
         try:
-            with get_db() as db:
-                chat = db.get(Chat, id)
-                tags = chat.meta.get("tags", [])
-                tag_id = tag_name.replace(" ", "_").lower()
+            chat = chat_manager.retrieve(_id)
+            tags = chat['meta'].get("tags", [])
+            tag_id = tag_name.replace(" ", "_").lower()
 
-                tags = [tag for tag in tags if tag != tag_id]
-                chat.meta = {
-                    **chat.meta,
-                    "tags": list(set(tags)),
-                }
-                db.commit()
-                return True
+            tags = [tag for tag in tags if tag != tag_id]
+            meta = {
+                **chat['meta'],
+                "tags": list(set(tags)),
+            }
+            chat_manager.update(_id, {'meta': meta})
+            return True
         except Exception:
             return False
 
@@ -758,7 +741,8 @@ class ChatTable:
         except Exception:
             return False
 
-    def delete_chat_by_id(self, _id: str, sid: str) -> bool:
+    @staticmethod
+    def delete_chat_by_id(_id: str, sid: str) -> bool:
         try:
             chat_manager.destroy(_id)
             return True
@@ -766,7 +750,8 @@ class ChatTable:
         except Exception:
             return False
 
-    def delete_chat_by_id_and_user_id(self, _id: str, user_id: str) -> bool:
+    @staticmethod
+    def delete_chat_by_id_and_user_id(_id: str, user_id: str) -> bool:
         try:
             chat_manager.destroy(_id, {'user_id': user_id})
             return True
@@ -774,15 +759,12 @@ class ChatTable:
         except Exception:
             return False
 
-    def delete_chats_by_user_id(self, user_id: str) -> bool:
+    @staticmethod
+    def delete_chats_by_user_id(user_id: str) -> bool:
         try:
-            with get_db() as db:
-                self.delete_shared_chats_by_user_id(user_id)
-
-                db.query(Chat).filter_by(user_id=user_id).delete()
-                db.commit()
-
-                return True
+            chat_manager.destroy('', {'user_id': user_id})
+            # self.delete_shared_chats_by_user_id(user_id)
+            return True
         except Exception:
             return False
 
@@ -796,18 +778,18 @@ class ChatTable:
         except Exception:
             return False
 
-    def delete_shared_chats_by_user_id(self, user_id: str) -> bool:
-        try:
-            with get_db() as db:
-                chats_by_user = db.query(Chat).filter_by(user_id=user_id).all()
-                shared_chat_ids = [f"shared-{chat.id}" for chat in chats_by_user]
-
-                db.query(Chat).filter(Chat.user_id.in_(shared_chat_ids)).delete()
-                db.commit()
-
-                return True
-        except Exception:
-            return False
+    # def delete_shared_chats_by_user_id(self, user_id: str) -> bool:
+    #     try:
+    #         with get_db() as db:
+    #             chats_by_user = db.query(Chat).filter_by(user_id=user_id).all()
+    #             shared_chat_ids = [f"shared-{chat.id}" for chat in chats_by_user]
+    #
+    #             db.query(Chat).filter(Chat.user_id.in_(shared_chat_ids)).delete()
+    #             db.commit()
+    #
+    #             return True
+    #     except Exception:
+    #         return False
 
 
 Chats = ChatTable()

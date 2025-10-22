@@ -4,11 +4,11 @@ import logging
 import asyncio
 import threading
 
+from open_webui.env import SRC_LOG_LEVELS
 from jms.wisp import PROJECT_DIR
 from jms.wisp.protobuf import service_pb2
 from jms.wisp.exceptions import WispError
 from jms.wisp.protobuf.common_pb2 import KillSession
-from open_webui.env import SRC_LOG_LEVELS
 from .base import BaseWisp
 from .session import JMSSession
 
@@ -33,24 +33,20 @@ class PollJMSEvent(BaseWisp):
             logger.info('Scan remain replay success')
 
     def wait_for_kill_session_message(self):
-        from jms import session_manager
+        from jms import chat_manager
         q = queue.Queue(maxsize=1000)
         for resp in self.stub.DispatchTask(iter(q.get, None)):
             task = resp.task
-            task_id = task.id
             session_id = task.session_id
             task_action = task.action
-            target_session = None
-            for jms_session in session_manager.get_store().values():
-                if isinstance(jms_session, JMSSession) and jms_session.session.id == session_id:
-                    target_session = jms_session
-                    break
-            if target_session is not None:
-                if task_action == KillSession:
-                    asyncio.run(self.close_session(target_session))
 
-                req = service_pb2.FinishedTaskRequest(task_id=target_session.session.id)
-                self.stub.FinishSession(req)
+            if task_action == KillSession:
+                filtered = chat_manager.list(query={'ids': session_id})
+                for chat in filtered:
+                    asyncio.run(self.close_session(JMSSession(chat)))
+
+            req = service_pb2.FinishedTaskRequest(task_id=session_id)
+            self.stub.FinishSession(req)
 
     def start_session_killer(self):
         self.wait_for_kill_session_message()

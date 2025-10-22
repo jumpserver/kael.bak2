@@ -548,8 +548,6 @@
 					$socket.emit('user-join', { user: sessionUser });
 					await user.set(sessionUser);
 				} else {
-					// Redirect Invalid Session User to /auth Page
-					localStorage.removeItem('token');
 					await goto(`/core/auth/login/?next=/kael?redirect=${encodedUrl}`);
 				}
 			}

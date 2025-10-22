@@ -879,7 +879,7 @@ Generate a concise 3–5 word chat title.
 - Title length: 3–5 words total.
 - Do NOT include emojis, punctuation at the ends, or decorative symbols.
 - No quotes inside the title text, no colons (:), no brackets, no hashtags.
-- Language: Use the chat’s primary language; default to English if mixed.
+- Language: Use the chat’s primary language.
 - Be accurate and specific, not poetic or clickbait.
 - Summarize the dominant topic of the chat history.
 

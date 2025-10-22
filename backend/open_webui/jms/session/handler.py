@@ -6,6 +6,7 @@ from jms.wisp.protobuf import service_pb2
 from jms.wisp.exceptions import WispError
 from jms.wisp.protobuf.common_pb2 import Session, User
 from open_webui.env import SRC_LOG_LEVELS
+from jms import CommandHandler, ReplayHandler
 from ..account import AccountChatHandler
 from ..base import BaseWisp
 
@@ -14,17 +15,16 @@ logger.setLevel(SRC_LOG_LEVELS["WISP"])
 
 
 class JMSSession(BaseWisp):
-    def __init__(self, session: Session, sid: str):
+    def __init__(self, chat: dict):
         super().__init__()
-        self.sid = sid
-        self.session = session
+        self.chat_id = chat['id']
 
-        self.command_handler = None
-        self.replay_handler = None
+        self.command_handler = CommandHandler(self.chat_id, chat['session_info'])
+        self.replay_handler = ReplayHandler(self.chat_id)
 
     async def close_session(self) -> None:
         req = service_pb2.SessionFinishRequest(
-            id=self.session.id,
+            id=self.chat_id,
             date_end=int(datetime.now().timestamp())
         )
         resp = self.stub.FinishSession(req)
@@ -35,11 +35,9 @@ class JMSSession(BaseWisp):
             raise WispError(error_message)
 
     async def close(self) -> None:
-        from jms import session_manager
         await asyncio.sleep(1)
         await self.replay_handler.upload()
         await self.close_session()
-        session_manager.unregister_jms_session(self)
 
 
 class SessionHandler(BaseWisp):
@@ -50,15 +48,10 @@ class SessionHandler(BaseWisp):
         self.remote_address = ip
         self.user = user
 
-    def create_new_session(self, chat_model: str) -> JMSSession:
+    def create_session(self, chat_model: str) -> Session:
         account_handler = AccountChatHandler()
         account_data = account_handler.get_account()
 
-        session = self.create_session(chat_model, account_data)
-        jms_session = JMSSession(session, self.sid)
-        return jms_session
-
-    def create_session(self, chat_model: str, account_data: dict) -> Session:
         req_session = Session(
             user_id=self.user.id,
             user=f'{self.user.name}({self.user.username})',

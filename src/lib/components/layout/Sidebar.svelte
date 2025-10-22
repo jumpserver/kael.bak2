@@ -452,7 +452,7 @@
 		});
 
 		if (res) {
-			$socket.emit('join-channels', { auth: { token: $user?.token } });
+			$socket.emit('join-channels', { id: user?.id });
 			await initChannels();
 			showCreateChannel = false;
 		}

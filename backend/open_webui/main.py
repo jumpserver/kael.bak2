@@ -5,6 +5,8 @@ import os
 import sys
 from contextlib import asynccontextmanager
 
+from jms import setup_poll_jms_event
+
 # Base path configuration - easily changeable
 BASE_PATH = "/kael"
 
@@ -71,7 +73,7 @@ class SPAStaticFiles(StaticFiles):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     start_logger()
-
+    setup_poll_jms_event()
     asyncio.create_task(periodic_usage_pool_cleanup())
     yield
 
@@ -88,7 +90,6 @@ init_app_config(app)
 init_middlewares(app)
 # Setup all routes
 setup_routes(app, socket_app)
-
 
 
 def swagger_ui_html(*args, **kwargs):

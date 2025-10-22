@@ -5,27 +5,19 @@ import sys
 import time
 
 from open_webui.models.channels import Channels
-
+from open_webui.socket.utils import RedisDict, RedisLock
 from open_webui.utils.redis import get_sentinels_from_env, get_sentinel_url_from_env
-
 from open_webui.env import (
-    ENABLE_WEBSOCKET_SUPPORT,
+    SRC_LOG_LEVELS,
+    GLOBAL_LOG_LEVEL,
     WEBSOCKET_MANAGER,
     WEBSOCKET_REDIS_URL,
-    WEBSOCKET_REDIS_LOCK_TIMEOUT,
     WEBSOCKET_SENTINEL_PORT,
     WEBSOCKET_SENTINEL_HOSTS,
+    ENABLE_WEBSOCKET_SUPPORT,
+    WEBSOCKET_REDIS_LOCK_TIMEOUT,
 )
-from open_webui.utils.auth import decode_token
-from open_webui.socket.utils import RedisDict, RedisLock
-
-from jms import check_user
-from jms import session_manager
-
-from open_webui.env import (
-    GLOBAL_LOG_LEVEL,
-    SRC_LOG_LEVELS,
-)
+from jms import check_user, chat_manager, JMSSession
 
 # Import BASE_PATH from main module
 try:
@@ -236,11 +228,6 @@ async def user_join(sid, data):
 async def join_channel(sid, data):
     from open_webui.models.users import Users
 
-    auth = data["auth"] if "auth" in data else None
-    if not auth or "token" not in auth:
-        return
-
-    data = decode_token(auth["token"])
     if data is None or "id" not in data:
         return
 
@@ -304,13 +291,11 @@ async def disconnect(sid):
 
         await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})
 
-        session_store = session_manager.get_store()
+        chats = chat_manager.list(query={'socket_id': sid})
 
-        for k, store in session_store.items():
-            jms_session = store.get('jms_session')
-            if jms_session and jms_session.sid == sid:
-                await jms_session.close()
-                break
+        for chat in chats:
+            jms_session = JMSSession(chat)
+            await jms_session.close()
     else:
         print(f"Unknown session ID {sid} disconnected")
 

@@ -232,16 +232,16 @@
 				<ArchiveBox strokeWidth="2" />
 				<div class="flex items-center">{$i18n.t('Archive')}</div>
 			</DropdownMenu.Item>
-
-			<DropdownMenu.Item
-				class="flex gap-2 items-center px-3 py-1.5 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800  rounded-md"
-				on:click={() => {
-					shareHandler();
-				}}
-			>
-				<Share />
-				<div class="flex items-center">{$i18n.t('Share')}</div>
-			</DropdownMenu.Item>
+<!--			TODO 暂时关闭分享-->
+<!--			<DropdownMenu.Item-->
+<!--				class="flex gap-2 items-center px-3 py-1.5 text-sm  cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800  rounded-md"-->
+<!--				on:click={() => {-->
+<!--					shareHandler();-->
+<!--				}}-->
+<!--			>-->
+<!--				<Share />-->
+<!--				<div class="flex items-center">{$i18n.t('Share')}</div>-->
+<!--			</DropdownMenu.Item>-->
 
 			<DropdownMenu.Sub>
 				<DropdownMenu.SubTrigger

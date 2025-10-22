@@ -104,11 +104,16 @@ async def create_new_chat(
 
 
 @router.post("/import", response_model=Optional[ChatResponse])
-async def import_chat(form_data: ChatImportForm, user=Depends(get_verified_user)):
+async def import_chat(
+        form_data: ChatImportForm,
+        sid: str = Header(...),
+        user=Depends(get_verified_user),
+        request: Request = None,
+):
     try:
-        chat = Chats.import_chat(user.id, form_data)
+        chat = Chats.import_chat(form_data, sid, request, user)
         if chat:
-            tags = chat.meta.get("tags", [])
+            tags = chat['meta'].get("tags", [])
             for tag_id in tags:
                 tag_id = tag_id.replace(" ", "_").lower()
                 tag_name = " ".join([word.capitalize() for word in tag_id.split("_")])
@@ -118,7 +123,7 @@ async def import_chat(form_data: ChatImportForm, user=Depends(get_verified_user)
                 ):
                     Tags.insert_new_tag(tag_name, user.id)
 
-        return ChatResponse(**chat.model_dump())
+        return ChatResponse(**chat)
     except Exception as e:
         log.exception(e)
         raise HTTPException(
@@ -266,17 +271,17 @@ async def archive_all_chats(user=Depends(get_verified_user)):
 ############################
 
 
-@router.get("/share/{share_id}", response_model=Optional[ChatResponse])
-async def get_shared_chat_by_id(share_id: str, user=Depends(get_verified_user)):
-    chat = Chats.get_chat_by_id(share_id)
-
-    if chat:
-        return ChatResponse(**chat)
-
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_MESSAGES.NOT_FOUND
-        )
+# @router.get("/share/{share_id}", response_model=Optional[ChatResponse])
+# async def get_shared_chat_by_id(share_id: str, user=Depends(get_verified_user)):
+#     chat = Chats.get_chat_by_id(share_id)
+#
+#     if chat:
+#         return ChatResponse(**chat)
+#
+#     else:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_MESSAGES.NOT_FOUND
+#         )
 
 
 ############################
@@ -589,27 +594,27 @@ async def archive_chat_by_id(id: str, user=Depends(get_verified_user)):
 ############################
 
 
-@router.post("/{_id}/share", response_model=Optional[ChatResponse])
-async def share_chat_by_id(_id: str, user=Depends(get_verified_user)):
-    chat = Chats.get_chat_by_id_and_user_id(_id, user.id)
-    if chat:
-        if chat.share_id:
-            shared_chat = Chats.update_shared_chat_by_chat_id(chat.id)
-            return ChatResponse(**shared_chat.model_dump())
-
-        shared_chat = Chats.insert_shared_chat_by_chat_id(chat.id)
-        if not shared_chat:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=ERROR_MESSAGES.DEFAULT(),
-            )
-        return ChatResponse(**shared_chat.model_dump())
-
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
-        )
+# @router.post("/{_id}/share", response_model=Optional[ChatResponse])
+# async def share_chat_by_id(_id: str, user=Depends(get_verified_user)):
+#     chat = Chats.get_chat_by_id_and_user_id(_id, user.id)
+#     if chat:
+#         if chat.share_id:
+#             shared_chat = Chats.update_shared_chat_by_chat_id(chat.id)
+#             return ChatResponse(**shared_chat.model_dump())
+#
+#         shared_chat = Chats.insert_shared_chat_by_chat_id(chat.id)
+#         if not shared_chat:
+#             raise HTTPException(
+#                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#                 detail=ERROR_MESSAGES.DEFAULT(),
+#             )
+#         return ChatResponse(**shared_chat.model_dump())
+#
+#     else:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
+#         )
 
 
 ############################
@@ -617,22 +622,22 @@ async def share_chat_by_id(_id: str, user=Depends(get_verified_user)):
 ############################
 
 
-@router.delete("/{id}/share", response_model=Optional[bool])
-async def delete_shared_chat_by_id(id: str, user=Depends(get_verified_user)):
-    chat = Chats.get_chat_by_id_and_user_id(id, user.id)
-    if chat:
-        if not chat.share_id:
-            return False
-
-        result = Chats.delete_shared_chat_by_chat_id(id)
-        update_result = Chats.update_chat_share_id_by_id(id, None)
-
-        return result and update_result != None
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
-        )
+# @router.delete("/{id}/share", response_model=Optional[bool])
+# async def delete_shared_chat_by_id(id: str, user=Depends(get_verified_user)):
+#     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
+#     if chat:
+#         if not chat.share_id:
+#             return False
+#
+#         result = Chats.delete_shared_chat_by_chat_id(id)
+#         update_result = Chats.update_chat_share_id_by_id(id, None)
+#
+#         return result and update_result != None
+#     else:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
+#         )
 
 
 ############################
