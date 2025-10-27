@@ -339,7 +339,7 @@ async def update_chat_by_id(
         _id: str, form_data: ChatForm, user=Depends(get_verified_user)
 ):
     chat = Chats.get_chat_by_id_and_user_id(_id, user.id)
-    if chat:
+    if chat and chat.get('chat'):
         updated_chat = {**chat['chat'], **form_data.chat}
         chat = Chats.update_chat_by_id(_id, updated_chat)
         return ChatResponse(**chat)

@@ -31,26 +31,26 @@ class ChatHandler(BaseWisp):
         resp = self._request("POST", CHAT_URL, body=body, action="create chat")
         return self._loads(resp.body)
 
-    def update(self, chat_id: str, data: Dict[str, Any]) -> dict:
+    def update(self, chat_id: Optional[str] = None, data: Dict[str, Any] = None, query: Dict[str, Any] = None) -> dict:
         self._ensure_id(chat_id)
         path = f"{CHAT_URL}{chat_id}/"
         body = self._dumps(data)
-        resp = self._request("PATCH", path, body=body, action=f"update chat {chat_id}")
+        resp = self._request("PATCH", path, query=query, body=body, action=f"update chat {chat_id}")
         return self._loads(resp.body)
 
-    def destroy(self, chat_id: Optional[str] = None, data: Dict[str, Any] = None) -> None:
+    def destroy(self, chat_id: Optional[str] = None, query: Dict[str, Any] = None) -> None:
         """
         If chat_id is provided, DELETE /chats/{id}/
-        Else if data is provided, bulk DELETE /chats/ with JSON body
+        Else if query is provided, bulk DELETE /chats/ with query params
         """
         if chat_id:
             path, body, action = f"{CHAT_URL}{chat_id}/", None, f"delete chat {chat_id}"
-        elif data is not None:
-            path, body, action = CHAT_URL, self._dumps(data), "bulk delete chats"
+        elif query is not None:
+            path, query, action = CHAT_URL, query, "bulk delete chats"
         else:
             raise ValueError("Either chat_id or data must be provided")
 
-        self._request("DELETE", path, body=body, action=action)
+        self._request("DELETE", path, query=query, action=action)
 
     def _request(
             self,

@@ -351,13 +351,11 @@ class ChatTable:
         chat_dict = chat_manager.update(_id, data)
         return chat_dict
 
-    # TODO - needs optimization
-    def archive_all_chats_by_user_id(self, user_id: str) -> bool:
+    @staticmethod
+    def archive_all_chats_by_user_id(user_id: str) -> bool:
         try:
-            with get_db() as db:
-                db.query(Chat).filter_by(user_id=user_id).update({"archived": True})
-                db.commit()
-                return True
+            chat_manager.update(data={"archived": True}, query={"user_id": user_id})
+            return True
         except Exception:
             return False
 
@@ -606,14 +604,15 @@ class ChatTable:
         chat_dict = chat_manager.update(_id, data)
         return chat_dict
 
-    # TODO
-    def get_chat_tags_by_id_and_user_id(self, id: str, user_id: str) -> list[TagModel]:
+    # TODO - needs optimization
+    @staticmethod
+    def get_chat_tags_by_id_and_user_id(_id: str, user_id: str) -> list[TagModel]:
         with get_db() as db:
-            chat = db.get(Chat, id)
+            chat = db.get(Chat, _id)
             tags = chat.meta.get("tags", [])
             return [Tags.get_tag_by_name_and_user_id(tag, user_id) for tag in tags]
 
-    # TODO
+    # TODO - needs optimization
     def get_chat_list_by_user_id_and_tag_name(
             self, user_id: str, tag_name: str, skip: int = 0, limit: int = 50
     ) -> list[ChatModel]:
@@ -645,16 +644,16 @@ class ChatTable:
             log.debug(f"all_chats: {all_chats}")
             return [ChatModel.model_validate(chat) for chat in all_chats]
 
-    # TODO
+    # TODO - needs optimization
     def add_chat_tag_by_id_and_user_id_and_tag_name(
-            self, id: str, user_id: str, tag_name: str
+            self, _id: str, user_id: str, tag_name: str
     ) -> Optional[ChatModel]:
         tag = Tags.get_tag_by_name_and_user_id(tag_name, user_id)
         if tag is None:
             tag = Tags.insert_new_tag(tag_name, user_id)
         try:
             with get_db() as db:
-                chat = db.get(Chat, id)
+                chat = db.get(Chat, _id)
 
                 tag_id = tag.id
                 if tag_id not in chat.meta.get("tags", []):
