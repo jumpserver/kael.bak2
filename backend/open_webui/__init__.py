@@ -1,4 +1,4 @@
-import sys 
+import sys
 import os
 
 base_idir = os.path.dirname(os.path.abspath(__file__))

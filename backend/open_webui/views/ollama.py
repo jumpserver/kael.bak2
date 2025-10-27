@@ -34,7 +34,6 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, validator
 from starlette.background import BackgroundTask
 
-
 from open_webui.models.models import Models
 from open_webui.utils.misc import (
     calculate_sha256,
@@ -46,7 +45,6 @@ from open_webui.utils.payload import (
 )
 from open_webui.utils.auth import get_verified_user, get_verified_user
 from open_webui.utils.access_control import has_access
-
 
 from open_webui.config import (
     UPLOAD_DIR,
@@ -76,8 +74,8 @@ async def send_get_request(url, key=None):
 
 
 async def cleanup_response(
-    response: Optional[aiohttp.ClientResponse],
-    session: Optional[aiohttp.ClientSession],
+        response: Optional[aiohttp.ClientResponse],
+        session: Optional[aiohttp.ClientSession],
 ):
     if response:
         response.close()
@@ -86,13 +84,12 @@ async def cleanup_response(
 
 
 async def send_post_request(
-    url: str,
-    payload: Union[str, bytes],
-    stream: bool = True,
-    key: Optional[str] = None,
-    content_type: Optional[str] = None,
+        url: str,
+        payload: Union[str, bytes],
+        stream: bool = True,
+        key: Optional[str] = None,
+        content_type: Optional[str] = None,
 ):
-
     r = None
     try:
         session = aiohttp.ClientSession(
@@ -176,21 +173,21 @@ class ConnectionVerificationForm(BaseModel):
 
 @router.post("/verify")
 async def verify_connection(
-    form_data: ConnectionVerificationForm, user=Depends(get_verified_user)
+        form_data: ConnectionVerificationForm, user=Depends(get_verified_user)
 ):
     url = form_data.url
     key = form_data.key
 
     async with aiohttp.ClientSession(
-        timeout=aiohttp.ClientTimeout(total=AIOHTTP_CLIENT_TIMEOUT_MODEL_LIST)
+            timeout=aiohttp.ClientTimeout(total=AIOHTTP_CLIENT_TIMEOUT_MODEL_LIST)
     ) as session:
         try:
             async with session.get(
-                f"{url}/api/version",
-                headers={
-                    **({"Authorization": f"Bearer {key}"} if key else {}),
-                },
-                ssl=AIOHTTP_CLIENT_SESSION_SSL
+                    f"{url}/api/version",
+                    headers={
+                        **({"Authorization": f"Bearer {key}"} if key else {}),
+                    },
+                    ssl=AIOHTTP_CLIENT_SESSION_SSL
             ) as r:
                 if r.status != 200:
                     detail = f"HTTP Error: {r.status}"
@@ -230,7 +227,7 @@ class OllamaConfigForm(BaseModel):
 
 @router.post("/config/update")
 async def update_config(
-    request: Request, form_data: OllamaConfigForm, user=Depends(get_verified_user)
+        request: Request, form_data: OllamaConfigForm, user=Depends(get_verified_user)
 ):
     request.app.state.config.ENABLE_OLLAMA_API = form_data.ENABLE_OLLAMA_API
 
@@ -271,7 +268,7 @@ async def get_filtered_models(models, user):
         model_info = Models.get_model_by_id(model["model"])
         if model_info:
             if user.id == model_info.user_id or has_access(
-                user.id, type="read", access_control=model_info.access_control
+                    user.id, type="read", access_control=model_info.access_control
             ):
                 filtered_models.append(model)
     return filtered_models
@@ -280,7 +277,7 @@ async def get_filtered_models(models, user):
 @router.get("/api/tags")
 @router.get("/api/tags/{url_idx}")
 async def get_ollama_tags(
-    request: Request, url_idx: Optional[int] = None, user=Depends(get_verified_user)
+        request: Request, url_idx: Optional[int] = None, user=Depends(get_verified_user)
 ):
     if url_idx is None:
         models = await get_all_models(request)
@@ -428,10 +425,10 @@ class ModelNameForm(BaseModel):
 @router.post("/api/pull")
 @router.post("/api/pull/{url_idx}")
 async def pull_model(
-    request: Request,
-    form_data: ModelNameForm,
-    url_idx: int = 0,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: ModelNameForm,
+        url_idx: int = 0,
+        user=Depends(get_verified_user),
 ):
     url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
     log.info(f"url: {url}")
@@ -455,10 +452,10 @@ class PushModelForm(BaseModel):
 @router.delete("/api/push")
 @router.delete("/api/push/{url_idx}")
 async def push_model(
-    request: Request,
-    form_data: PushModelForm,
-    url_idx: Optional[int] = None,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: PushModelForm,
+        url_idx: Optional[int] = None,
+        user=Depends(get_verified_user),
 ):
     if url_idx is None:
         await get_all_models(request)
@@ -493,10 +490,10 @@ class CreateModelForm(BaseModel):
 @router.post("/api/create")
 @router.post("/api/create/{url_idx}")
 async def create_model(
-    request: Request,
-    form_data: CreateModelForm,
-    url_idx: int = 0,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: CreateModelForm,
+        url_idx: int = 0,
+        user=Depends(get_verified_user),
 ):
     log.debug(f"form_data: {form_data}")
     url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
@@ -516,10 +513,10 @@ class CopyModelForm(BaseModel):
 @router.post("/api/copy")
 @router.post("/api/copy/{url_idx}")
 async def copy_model(
-    request: Request,
-    form_data: CopyModelForm,
-    url_idx: Optional[int] = None,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: CopyModelForm,
+        url_idx: Optional[int] = None,
+        user=Depends(get_verified_user),
 ):
     if url_idx is None:
         await get_all_models(request)
@@ -571,10 +568,10 @@ async def copy_model(
 @router.delete("/api/delete")
 @router.delete("/api/delete/{url_idx}")
 async def delete_model(
-    request: Request,
-    form_data: ModelNameForm,
-    url_idx: Optional[int] = None,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: ModelNameForm,
+        url_idx: Optional[int] = None,
+        user=Depends(get_verified_user),
 ):
     if url_idx is None:
         await get_all_models(request)
@@ -625,7 +622,7 @@ async def delete_model(
 
 @router.post("/api/show")
 async def show_model_info(
-    request: Request, form_data: ModelNameForm, user=Depends(get_verified_user)
+        request: Request, form_data: ModelNameForm, user=Depends(get_verified_user)
 ):
     await get_all_models(request)
     models = request.app.state.OLLAMA_MODELS
@@ -683,10 +680,10 @@ class GenerateEmbedForm(BaseModel):
 @router.post("/api/embed")
 @router.post("/api/embed/{url_idx}")
 async def embed(
-    request: Request,
-    form_data: GenerateEmbedForm,
-    url_idx: Optional[int] = None,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: GenerateEmbedForm,
+        url_idx: Optional[int] = None,
+        user=Depends(get_verified_user),
 ):
     log.info(f"generate_ollama_batch_embeddings {form_data}")
 
@@ -752,10 +749,10 @@ class GenerateEmbeddingsForm(BaseModel):
 @router.post("/api/embeddings")
 @router.post("/api/embeddings/{url_idx}")
 async def embeddings(
-    request: Request,
-    form_data: GenerateEmbeddingsForm,
-    url_idx: Optional[int] = None,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: GenerateEmbeddingsForm,
+        url_idx: Optional[int] = None,
+        user=Depends(get_verified_user),
 ):
     log.info(f"generate_ollama_embeddings {form_data}")
 
@@ -829,10 +826,10 @@ class GenerateCompletionForm(BaseModel):
 @router.post("/api/generate")
 @router.post("/api/generate/{url_idx}")
 async def generate_completion(
-    request: Request,
-    form_data: GenerateCompletionForm,
-    url_idx: Optional[int] = None,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: GenerateCompletionForm,
+        url_idx: Optional[int] = None,
+        user=Depends(get_verified_user),
 ):
     if url_idx is None:
         await get_all_models(request)
@@ -879,7 +876,7 @@ class ChatMessage(BaseModel):
     def check_at_least_one_field(cls, field_value, values, **kwargs):
         # Raise an error if both 'content' and 'tool_calls' are None
         if field_value is None and (
-            "tool_calls" not in values or values["tool_calls"] is None
+                "tool_calls" not in values or values["tool_calls"] is None
         ):
             raise ValueError(
                 "At least one of 'content' or 'tool_calls' must be provided"
@@ -915,11 +912,11 @@ async def get_ollama_url(request: Request, model: str, url_idx: Optional[int] = 
 @router.post("/api/chat")
 @router.post("/api/chat/{url_idx}")
 async def generate_chat_completion(
-    request: Request,
-    form_data: dict,
-    url_idx: Optional[int] = None,
-    user=Depends(get_verified_user),
-    bypass_filter: Optional[bool] = False,
+        request: Request,
+        form_data: dict,
+        url_idx: Optional[int] = None,
+        user=Depends(get_verified_user),
+        bypass_filter: Optional[bool] = False,
 ):
     if BYPASS_MODEL_ACCESS_CONTROL:
         bypass_filter = True
@@ -1008,10 +1005,10 @@ class OpenAICompletionForm(BaseModel):
 @router.post("/v1/completions")
 @router.post("/v1/completions/{url_idx}")
 async def generate_openai_completion(
-    request: Request,
-    form_data: dict,
-    url_idx: Optional[int] = None,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: dict,
+        url_idx: Optional[int] = None,
+        user=Depends(get_verified_user),
 ):
     try:
         form_data = OpenAICompletionForm(**form_data)
@@ -1064,10 +1061,10 @@ async def generate_openai_completion(
 @router.post("/v1/chat/completions")
 @router.post("/v1/chat/completions/{url_idx}")
 async def generate_openai_chat_completion(
-    request: Request,
-    form_data: dict,
-    url_idx: Optional[int] = None,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: dict,
+        url_idx: Optional[int] = None,
+        user=Depends(get_verified_user),
 ):
     metadata = form_data.pop("metadata", None)
 
@@ -1123,11 +1120,10 @@ async def generate_openai_chat_completion(
 @router.get("/v1/models")
 @router.get("/v1/models/{url_idx}")
 async def get_openai_models(
-    request: Request,
-    url_idx: Optional[int] = None,
-    user=Depends(get_verified_user),
+        request: Request,
+        url_idx: Optional[int] = None,
+        user=Depends(get_verified_user),
 ):
-
     models = []
     if url_idx is None:
         model_list = await get_all_models(request)
@@ -1205,7 +1201,7 @@ def parse_huggingface_url(hf_url):
 
 
 async def download_file_stream(
-    ollama_url, file_url, file_path, file_name, chunk_size=1024 * 1024
+        ollama_url, file_url, file_path, file_name, chunk_size=1024 * 1024
 ):
     done = False
 
@@ -1257,10 +1253,10 @@ async def download_file_stream(
 @router.post("/models/download")
 @router.post("/models/download/{url_idx}")
 async def download_model(
-    request: Request,
-    form_data: UrlForm,
-    url_idx: Optional[int] = None,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: UrlForm,
+        url_idx: Optional[int] = None,
+        user=Depends(get_verified_user),
 ):
     allowed_hosts = ["https://huggingface.co/", "https://github.com/"]
 
@@ -1290,10 +1286,10 @@ async def download_model(
 @router.post("/models/upload")
 @router.post("/models/upload/{url_idx}")
 async def upload_model(
-    request: Request,
-    file: UploadFile = File(...),
-    url_idx: Optional[int] = None,
-    user=Depends(get_verified_user),
+        request: Request,
+        file: UploadFile = File(...),
+        url_idx: Optional[int] = None,
+        user=Depends(get_verified_user),
 ):
     if url_idx is None:
         url_idx = 0

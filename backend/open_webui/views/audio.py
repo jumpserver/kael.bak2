@@ -26,7 +26,6 @@ from fastapi import (
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-
 from open_webui.utils.auth import get_verified_user
 from open_webui.config import (
     WHISPER_MODEL_AUTO_UPDATE,
@@ -42,7 +41,6 @@ from open_webui.env import (
     AIOHTTP_CLIENT_SESSION_SSL,
 )
 
-
 router = APIRouter()
 
 # Constants
@@ -56,7 +54,6 @@ log.setLevel(SRC_LOG_LEVELS["AUDIO"])
 
 SPEECH_CACHE_DIR = CACHE_DIR / "audio" / "speech"
 SPEECH_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-
 
 ##########################################
 #
@@ -76,9 +73,9 @@ def get_audio_format(file_path):
 
     info = mediainfo(file_path)
     if (
-        info.get("codec_name") == "aac"
-        and info.get("codec_type") == "audio"
-        and info.get("codec_tag_string") == "mp4a"
+            info.get("codec_name") == "aac"
+            and info.get("codec_type") == "audio"
+            and info.get("codec_tag_string") == "mp4a"
     ):
         return "mp4"
     elif info.get("format_name") == "ogg":
@@ -185,7 +182,7 @@ async def get_audio_config(request: Request, user=Depends(get_verified_user)):
 
 @router.post("/config/update")
 async def update_audio_config(
-    request: Request, form_data: AudioConfigUpdateForm, user=Depends(get_verified_user)
+        request: Request, form_data: AudioConfigUpdateForm, user=Depends(get_verified_user)
 ):
     request.app.state.config.TTS_OPENAI_API_BASE_URL = form_data.tts.OPENAI_API_BASE_URL
     request.app.state.config.TTS_OPENAI_API_KEY = form_data.tts.OPENAI_API_KEY
@@ -284,16 +281,16 @@ async def speech(request: Request):
         try:
             timeout = aiohttp.ClientTimeout(total=AIOHTTP_CLIENT_TIMEOUT)
             async with aiohttp.ClientSession(
-                timeout=timeout, trust_env=True
+                    timeout=timeout, trust_env=True
             ) as session:
                 async with session.post(
-                    url=f"{request.app.state.config.TTS_OPENAI_API_BASE_URL}/audio/speech",
-                    json=payload,
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {request.app.state.config.TTS_OPENAI_API_KEY}",
-                    },
-                    ssl=AIOHTTP_CLIENT_SESSION_SSL,
+                        url=f"{request.app.state.config.TTS_OPENAI_API_BASE_URL}/audio/speech",
+                        json=payload,
+                        headers={
+                            "Content-Type": "application/json",
+                            "Authorization": f"Bearer {request.app.state.config.TTS_OPENAI_API_KEY}",
+                        },
+                        ssl=AIOHTTP_CLIENT_SESSION_SSL,
                 ) as r:
                     r.raise_for_status()
 
@@ -335,21 +332,21 @@ async def speech(request: Request):
         try:
             timeout = aiohttp.ClientTimeout(total=AIOHTTP_CLIENT_TIMEOUT)
             async with aiohttp.ClientSession(
-                timeout=timeout, trust_env=True
+                    timeout=timeout, trust_env=True
             ) as session:
                 async with session.post(
-                    f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
-                    json={
-                        "text": payload["input"],
-                        "model_id": request.app.state.config.TTS_MODEL,
-                        "voice_settings": {"stability": 0.5, "similarity_boost": 0.5},
-                    },
-                    headers={
-                        "Accept": "audio/mpeg",
-                        "Content-Type": "application/json",
-                        "xi-api-key": request.app.state.config.TTS_API_KEY,
-                    },
-                    ssl=AIOHTTP_CLIENT_SESSION_SSL,
+                        f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
+                        json={
+                            "text": payload["input"],
+                            "model_id": request.app.state.config.TTS_MODEL,
+                            "voice_settings": {"stability": 0.5, "similarity_boost": 0.5},
+                        },
+                        headers={
+                            "Accept": "audio/mpeg",
+                            "Content-Type": "application/json",
+                            "xi-api-key": request.app.state.config.TTS_API_KEY,
+                        },
+                        ssl=AIOHTTP_CLIENT_SESSION_SSL,
                 ) as r:
                     r.raise_for_status()
 
@@ -396,17 +393,17 @@ async def speech(request: Request):
             </speak>"""
             timeout = aiohttp.ClientTimeout(total=AIOHTTP_CLIENT_TIMEOUT)
             async with aiohttp.ClientSession(
-                timeout=timeout, trust_env=True
+                    timeout=timeout, trust_env=True
             ) as session:
                 async with session.post(
-                    f"https://{region}.tts.speech.microsoft.com/cognitiveservices/v1",
-                    headers={
-                        "Ocp-Apim-Subscription-Key": request.app.state.config.TTS_API_KEY,
-                        "Content-Type": "application/ssml+xml",
-                        "X-Microsoft-OutputFormat": output_format,
-                    },
-                    ssl=AIOHTTP_CLIENT_SESSION_SSL,
-                    data=data,
+                        f"https://{region}.tts.speech.microsoft.com/cognitiveservices/v1",
+                        headers={
+                            "Ocp-Apim-Subscription-Key": request.app.state.config.TTS_API_KEY,
+                            "Content-Type": "application/ssml+xml",
+                            "X-Microsoft-OutputFormat": output_format,
+                        },
+                        ssl=AIOHTTP_CLIENT_SESSION_SSL,
+                        data=data,
                 ) as r:
                     r.raise_for_status()
 
@@ -740,7 +737,7 @@ def compress_audio(file_path):
         log.debug(f"Compressed audio to {compressed_path}")
 
         if (
-            os.path.getsize(compressed_path) > MAX_FILE_SIZE
+                os.path.getsize(compressed_path) > MAX_FILE_SIZE
         ):  # Still larger than MAX_FILE_SIZE after compression
             raise Exception(ERROR_MESSAGES.FILE_TOO_LARGE(size=f"{MAX_FILE_SIZE_MB}MB"))
         return compressed_path
@@ -750,9 +747,9 @@ def compress_audio(file_path):
 
 @router.post("/transcriptions")
 def transcription(
-    request: Request,
-    file: UploadFile = File(...),
-    user=Depends(get_verified_user),
+        request: Request,
+        file: UploadFile = File(...),
+        user=Depends(get_verified_user),
 ):
     log.info(f"file.content_type: {file.content_type}")
 
@@ -814,7 +811,7 @@ def get_available_models(request: Request) -> list[dict]:
     if request.app.state.config.TTS_ENGINE == "openai":
         # Use custom endpoint if not using the official OpenAI API URL
         if not request.app.state.config.TTS_OPENAI_API_BASE_URL.startswith(
-            "https://api.openai.com"
+                "https://api.openai.com"
         ):
             try:
                 response = requests.get(
@@ -860,7 +857,7 @@ def get_available_voices(request) -> dict:
     if request.app.state.config.TTS_ENGINE == "openai":
         # Use custom endpoint if not using the official OpenAI API URL
         if not request.app.state.config.TTS_OPENAI_API_BASE_URL.startswith(
-            "https://api.openai.com"
+                "https://api.openai.com"
         ):
             try:
                 response = requests.get(

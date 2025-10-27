@@ -17,6 +17,7 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 // 	}
 // };
 
+// @ts-ignore
 export default defineConfig({
 	plugins: [
 		sveltekit(),

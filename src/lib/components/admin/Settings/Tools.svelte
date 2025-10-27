@@ -17,8 +17,6 @@
 	import AddServerModal from '$lib/components/AddServerModal.svelte';
 	import { getToolServerConnections, setToolServerConnections } from '$lib/apis/configs';
 
-	export let saveSettings: Function;
-
 	let servers = null;
 	let showConnectionModal = false;
 

@@ -23,15 +23,14 @@ from open_webui.constants import ERROR_MESSAGES
 from open_webui.utils.auth import get_verified_user
 from open_webui.utils.access_control import has_access, has_permission
 
-
 from open_webui.env import SRC_LOG_LEVELS
 from open_webui.models.models import Models, ModelForm
-
 
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["MODELS"])
 
 router = APIRouter()
+
 
 ############################
 # getKnowledgeBases
@@ -130,7 +129,7 @@ async def get_knowledge_list(user=Depends(get_verified_user)):
 
 @router.post("/create", response_model=Optional[KnowledgeResponse])
 async def create_new_knowledge(
-    request: Request, form_data: KnowledgeForm, user=Depends(get_verified_user)
+        request: Request, form_data: KnowledgeForm, user=Depends(get_verified_user)
 ):
     knowledge = Knowledges.insert_new_knowledge(user.id, form_data)
 
@@ -240,9 +239,9 @@ async def get_knowledge_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.post("/{id}/update", response_model=Optional[KnowledgeFilesResponse])
 async def update_knowledge_by_id(
-    id: str,
-    form_data: KnowledgeForm,
-    user=Depends(get_verified_user),
+        id: str,
+        form_data: KnowledgeForm,
+        user=Depends(get_verified_user),
 ):
     knowledge = Knowledges.get_knowledge_by_id(id=id)
     if not knowledge:
@@ -277,10 +276,10 @@ class KnowledgeFileIdForm(BaseModel):
 
 @router.post("/{id}/file/add", response_model=Optional[KnowledgeFilesResponse])
 def add_file_to_knowledge_by_id(
-    request: Request,
-    id: str,
-    form_data: KnowledgeFileIdForm,
-    user=Depends(get_verified_user),
+        request: Request,
+        id: str,
+        form_data: KnowledgeFileIdForm,
+        user=Depends(get_verified_user),
 ):
     knowledge = Knowledges.get_knowledge_by_id(id=id)
 
@@ -352,10 +351,10 @@ def add_file_to_knowledge_by_id(
 
 @router.post("/{id}/file/update", response_model=Optional[KnowledgeFilesResponse])
 def update_file_from_knowledge_by_id(
-    request: Request,
-    id: str,
-    form_data: KnowledgeFileIdForm,
-    user=Depends(get_verified_user),
+        request: Request,
+        id: str,
+        form_data: KnowledgeFileIdForm,
+        user=Depends(get_verified_user),
 ):
     knowledge = Knowledges.get_knowledge_by_id(id=id)
     if not knowledge:
@@ -413,9 +412,9 @@ def update_file_from_knowledge_by_id(
 
 @router.post("/{id}/file/remove", response_model=Optional[KnowledgeFilesResponse])
 def remove_file_from_knowledge_by_id(
-    id: str,
-    form_data: KnowledgeFileIdForm,
-    user=Depends(get_verified_user),
+        id: str,
+        form_data: KnowledgeFileIdForm,
+        user=Depends(get_verified_user),
 ):
     knowledge = Knowledges.get_knowledge_by_id(id=id)
     if not knowledge:
@@ -573,10 +572,10 @@ async def reset_knowledge_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.post("/{id}/files/batch/add", response_model=Optional[KnowledgeFilesResponse])
 def add_files_to_knowledge_batch(
-    request: Request,
-    id: str,
-    form_data: list[KnowledgeFileIdForm],
-    user=Depends(get_verified_user),
+        request: Request,
+        id: str,
+        form_data: list[KnowledgeFileIdForm],
+        user=Depends(get_verified_user),
 ):
     """
     Add multiple files to a knowledge base

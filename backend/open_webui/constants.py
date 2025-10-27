@@ -96,7 +96,8 @@ class ERROR_MESSAGES(str, Enum):
     )
 
     FILE_TOO_LARGE = (
-        lambda size="": f"Oops! The file you're trying to upload is too large. Please upload a file that is less than {size}."
+        lambda
+            size="": f"Oops! The file you're trying to upload is too large. Please upload a file that is less than {size}."
     )
 
     DUPLICATE_CONTENT = (

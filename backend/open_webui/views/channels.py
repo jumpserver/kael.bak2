@@ -2,10 +2,8 @@ import json
 import logging
 from typing import Optional
 
-
 from fastapi import APIRouter, Depends, HTTPException, Request, status, BackgroundTasks
 from pydantic import BaseModel
-
 
 from open_webui.socket.main import sio, get_user_ids_from_room
 from open_webui.models.users import Users, UserNameResponse
@@ -18,10 +16,8 @@ from open_webui.models.messages import (
     MessageForm,
 )
 
-
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import SRC_LOG_LEVELS
-
 
 from open_webui.utils.auth import get_verified_user
 from open_webui.utils.webhook import post_webhook
@@ -30,6 +26,7 @@ log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["MODELS"])
 
 router = APIRouter()
+
 
 ############################
 # GetChatList
@@ -81,7 +78,7 @@ async def get_channel_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.post("/{id}/update", response_model=Optional[ChannelModel])
 async def update_channel_by_id(
-    id: str, form_data: ChannelForm, user=Depends(get_verified_user)
+        id: str, form_data: ChannelForm, user=Depends(get_verified_user)
 ):
     channel = Channels.get_channel_by_id(id)
     if not channel:
@@ -133,7 +130,7 @@ class MessageUserResponse(MessageResponse):
 
 @router.get("/{id}/messages", response_model=list[MessageUserResponse])
 async def get_channel_messages(
-    id: str, skip: int = 0, limit: int = 50, user=Depends(get_verified_user)
+        id: str, skip: int = 0, limit: int = 50, user=Depends(get_verified_user)
 ):
     channel = Channels.get_channel_by_id(id)
     if not channel:
@@ -201,11 +198,11 @@ async def send_notification(name, webui_url, channel, message, active_user_ids):
 
 @router.post("/{id}/messages/post", response_model=Optional[MessageModel])
 async def post_new_message(
-    request: Request,
-    id: str,
-    form_data: MessageForm,
-    background_tasks: BackgroundTasks,
-    user=Depends(get_verified_user),
+        request: Request,
+        id: str,
+        form_data: MessageForm,
+        background_tasks: BackgroundTasks,
+        user=Depends(get_verified_user),
 ):
     channel = Channels.get_channel_by_id(id)
     if not channel:
@@ -299,7 +296,7 @@ async def post_new_message(
 
 @router.get("/{id}/messages/{message_id}", response_model=Optional[MessageUserResponse])
 async def get_channel_message(
-    id: str, message_id: str, user=Depends(get_verified_user)
+        id: str, message_id: str, user=Depends(get_verified_user)
 ):
     channel = Channels.get_channel_by_id(id)
     if not channel:
@@ -337,11 +334,11 @@ async def get_channel_message(
     "/{id}/messages/{message_id}/thread", response_model=list[MessageUserResponse]
 )
 async def get_channel_thread_messages(
-    id: str,
-    message_id: str,
-    skip: int = 0,
-    limit: int = 50,
-    user=Depends(get_verified_user),
+        id: str,
+        message_id: str,
+        skip: int = 0,
+        limit: int = 50,
+        user=Depends(get_verified_user),
 ):
     channel = Channels.get_channel_by_id(id)
     if not channel:
@@ -382,7 +379,7 @@ async def get_channel_thread_messages(
     "/{id}/messages/{message_id}/update", response_model=Optional[MessageModel]
 )
 async def update_message_by_id(
-    id: str, message_id: str, form_data: MessageForm, user=Depends(get_verified_user)
+        id: str, message_id: str, form_data: MessageForm, user=Depends(get_verified_user)
 ):
     channel = Channels.get_channel_by_id(id)
     if not channel:
@@ -447,7 +444,7 @@ class ReactionForm(BaseModel):
 
 @router.post("/{id}/messages/{message_id}/reactions/add", response_model=bool)
 async def add_reaction_to_message(
-    id: str, message_id: str, form_data: ReactionForm, user=Depends(get_verified_user)
+        id: str, message_id: str, form_data: ReactionForm, user=Depends(get_verified_user)
 ):
     channel = Channels.get_channel_by_id(id)
     if not channel:
@@ -506,7 +503,7 @@ async def add_reaction_to_message(
 
 @router.post("/{id}/messages/{message_id}/reactions/remove", response_model=bool)
 async def remove_reaction_by_id_and_user_id_and_name(
-    id: str, message_id: str, form_data: ReactionForm, user=Depends(get_verified_user)
+        id: str, message_id: str, form_data: ReactionForm, user=Depends(get_verified_user)
 ):
     channel = Channels.get_channel_by_id(id)
     if not channel:
@@ -568,7 +565,7 @@ async def remove_reaction_by_id_and_user_id_and_name(
 
 @router.delete("/{id}/messages/{message_id}/delete", response_model=bool)
 async def delete_message_by_id(
-    id: str, message_id: str, user=Depends(get_verified_user)
+        id: str, message_id: str, user=Depends(get_verified_user)
 ):
     channel = Channels.get_channel_by_id(id)
     if not channel:

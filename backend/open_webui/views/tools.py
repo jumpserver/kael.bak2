@@ -24,8 +24,8 @@ from open_webui.utils.tools import get_tool_servers_data
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["MAIN"])
 
-
 router = APIRouter()
+
 
 ############################
 # GetTools
@@ -34,7 +34,6 @@ router = APIRouter()
 
 @router.get("/", response_model=list[ToolUserResponse])
 async def get_tools(request: Request, user=Depends(get_verified_user)):
-
     if not request.app.state.TOOL_SERVERS:
         # If the tool servers are not set, we need to set them
         # This is done only once when the server starts
@@ -56,8 +55,8 @@ async def get_tools(request: Request, user=Depends(get_verified_user)):
                     .get("title", "Tool Server"),
                     "meta": {
                         "description": server["openapi"]
-                        .get("info", {})
-                        .get("description", ""),
+                    .get("info", {})
+                    .get("description", ""),
                     },
                     "access_control": request.app.state.config.TOOL_SERVER_CONNECTIONS[
                         server["idx"]
@@ -102,9 +101,9 @@ async def export_tools(user=Depends(get_verified_user)):
 
 @router.post("/create", response_model=Optional[ToolResponse])
 async def create_new_tools(
-    request: Request,
-    form_data: ToolForm,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: ToolForm,
+        user=Depends(get_verified_user),
 ):
     if not form_data.id.isidentifier():
         raise HTTPException(
@@ -170,10 +169,10 @@ async def get_tools_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.post("/id/{id}/update", response_model=Optional[ToolModel])
 async def update_tools_by_id(
-    request: Request,
-    id: str,
-    form_data: ToolForm,
-    user=Depends(get_verified_user),
+        request: Request,
+        id: str,
+        form_data: ToolForm,
+        user=Depends(get_verified_user),
 ):
     tools = Tools.get_tool_by_id(id)
     if not tools:
@@ -222,7 +221,7 @@ async def update_tools_by_id(
 
 @router.delete("/id/{id}/delete", response_model=bool)
 async def delete_tools_by_id(
-    request: Request, id: str, user=Depends(get_verified_user)
+        request: Request, id: str, user=Depends(get_verified_user)
 ):
     tools = Tools.get_tool_by_id(id)
     if not tools:
@@ -271,7 +270,7 @@ async def get_tools_valves_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.get("/id/{id}/valves/spec", response_model=Optional[dict])
 async def get_tools_valves_spec_by_id(
-    request: Request, id: str, user=Depends(get_verified_user)
+        request: Request, id: str, user=Depends(get_verified_user)
 ):
     tools = Tools.get_tool_by_id(id)
     if tools:
@@ -299,7 +298,7 @@ async def get_tools_valves_spec_by_id(
 
 @router.post("/id/{id}/valves/update", response_model=Optional[dict])
 async def update_tools_valves_by_id(
-    request: Request, id: str, form_data: dict, user=Depends(get_verified_user)
+        request: Request, id: str, form_data: dict, user=Depends(get_verified_user)
 ):
     tools = Tools.get_tool_by_id(id)
     if not tools:
@@ -360,7 +359,7 @@ async def get_tools_user_valves_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.get("/id/{id}/valves/user/spec", response_model=Optional[dict])
 async def get_tools_user_valves_spec_by_id(
-    request: Request, id: str, user=Depends(get_verified_user)
+        request: Request, id: str, user=Depends(get_verified_user)
 ):
     tools = Tools.get_tool_by_id(id)
     if tools:
@@ -383,7 +382,7 @@ async def get_tools_user_valves_spec_by_id(
 
 @router.post("/id/{id}/valves/user/update", response_model=Optional[dict])
 async def update_tools_user_valves_by_id(
-    request: Request, id: str, form_data: dict, user=Depends(get_verified_user)
+        request: Request, id: str, form_data: dict, user=Depends(get_verified_user)
 ):
     tools = Tools.get_tool_by_id(id)
 

@@ -3,8 +3,6 @@ import json
 import datetime as dt
 from starlette import status
 
-
-
 # Base path configuration - easily changeable
 BASE_PATH = "/kael"
 
@@ -41,18 +39,14 @@ from open_webui.utils.models import (
     get_all_base_models,
 )
 
-from open_webui.utils.auth import (
-    get_verified_user,
-)
-
+from open_webui.models.chats import Chats
+from open_webui.utils.auth import get_verified_user
 from open_webui.utils.chat import (
     generate_chat_completion as chat_completion_handler,
     chat_completed as chat_completed_handler,
     chat_action as chat_action_handler,
 )
-from open_webui.models.chats import Chats
 from open_webui.utils.middleware import process_chat_payload, process_chat_response
-
 
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["MAIN"])
@@ -330,5 +324,3 @@ def setup_lazy_routes(app):
 
         print(f"Task IDs for chat {chat_id}: {task_ids}")
         return {"task_ids": task_ids}
-
-

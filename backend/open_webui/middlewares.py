@@ -18,6 +18,7 @@ from open_webui.internal.db import Session
 BASE_PATH = '/kael'
 CORS_ALLOW_ORIGIN = os.environ.get("CORS_ALLOW_ORIGIN", "*")
 
+
 class RedirectMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # Check if the request is a GET request
@@ -48,22 +49,20 @@ def init_middlewares(app):
         # log.debug("Commit session after request")
         Session.commit()
         return response
-    
-    
+
     @app.middleware("http")
     async def check_url(request: Request, call_next):
         start_time = int(time.time())
         request.state.token = get_http_authorization_cred(
             request.headers.get("Authorization")
         )
-    
+
         request.state.enable_api_key = app.state.config.ENABLE_API_KEY
         response = await call_next(request)
         process_time = int(time.time()) - start_time
         response.headers["X-Process-Time"] = str(process_time)
         return response
-    
-    
+
     @app.middleware("http")
     async def inspect_websocket(request: Request, call_next):
         if (
@@ -80,8 +79,7 @@ def init_middlewares(app):
                     content={"detail": "Invalid WebSocket upgrade request"},
                 )
         return await call_next(request)
-    
-    
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=CORS_ALLOW_ORIGIN,
@@ -95,7 +93,7 @@ def init_middlewares(app):
     except ValueError as e:
         logger.error(f"Invalid audit level: {AUDIT_LOG_LEVEL}. Error: {e}")
         audit_level = AuditLevel.NONE
-    
+
     if audit_level != AuditLevel.NONE:
         app.add_middleware(
             AuditLoggingMiddleware,
@@ -103,4 +101,3 @@ def init_middlewares(app):
             excluded_paths=AUDIT_EXCLUDED_PATHS,
             max_body_size=MAX_BODY_LOG_SIZE,
         )
-    

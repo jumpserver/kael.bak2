@@ -10,10 +10,8 @@ from open_webui.models.models import (
 from open_webui.constants import ERROR_MESSAGES
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
-
 from open_webui.utils.auth import get_verified_user
 from open_webui.utils.access_control import has_access, has_permission
-
 
 router = APIRouter()
 
@@ -45,9 +43,9 @@ async def get_base_models(user=Depends(get_verified_user)):
 
 @router.post("/create", response_model=Optional[ModelModel])
 async def create_new_model(
-    request: Request,
-    form_data: ModelForm,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: ModelForm,
+        user=Depends(get_verified_user),
 ):
     model = Models.get_model_by_id(form_data.id)
     if model:
@@ -78,8 +76,8 @@ async def get_model_by_id(id: str, user=Depends(get_verified_user)):
     model = Models.get_model_by_id(id)
     if model:
         if (
-            model.user_id == user.id
-            or has_access(user.id, "read", model.access_control)
+                model.user_id == user.id
+                or has_access(user.id, "read", model.access_control)
         ):
             return model
     else:
@@ -99,8 +97,8 @@ async def toggle_model_by_id(id: str, user=Depends(get_verified_user)):
     model = Models.get_model_by_id(id)
     if model:
         if (
-            model.user_id == user.id
-            or has_access(user.id, "write", model.access_control)
+                model.user_id == user.id
+                or has_access(user.id, "write", model.access_control)
         ):
             model = Models.toggle_model_by_id(id)
 
@@ -130,9 +128,9 @@ async def toggle_model_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.post("/model/update", response_model=Optional[ModelModel])
 async def update_model_by_id(
-    id: str,
-    form_data: ModelForm,
-    user=Depends(get_verified_user),
+        id: str,
+        form_data: ModelForm,
+        user=Depends(get_verified_user),
 ):
     model = Models.get_model_by_id(id)
 

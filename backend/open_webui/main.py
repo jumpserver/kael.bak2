@@ -10,16 +10,13 @@ from jms import setup_poll_jms_event
 # Base path configuration - easily changeable
 BASE_PATH = "/kael"
 
-
 from fastapi import (
     FastAPI,
     HTTPException,
     applications,
 )
-
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
-
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from open_webui.utils.logger import start_logger
@@ -30,10 +27,7 @@ from open_webui.socket.main import (
 from open_webui.config.app import init_app_config
 from open_webui.middlewares import init_middlewares
 from open_webui.urls import setup_routes
-
-
 from open_webui.models.functions import Functions
-
 from open_webui.config import (
     # Misc
     ENV,
@@ -44,8 +38,6 @@ from open_webui.env import (
     SAFE_MODE,
     SRC_LOG_LEVELS,
 )
-
-
 
 if SAFE_MODE:
     print("SAFE MODE ENABLED")
@@ -69,6 +61,7 @@ class SPAStaticFiles(StaticFiles):
                     return await super().get_response("index.html", scope)
             else:
                 raise ex
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

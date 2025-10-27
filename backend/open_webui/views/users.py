@@ -12,7 +12,6 @@ from open_webui.models.users import (
     UserUpdateForm,
 )
 
-
 from open_webui.socket.main import get_active_status_by_user_id
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import SRC_LOG_LEVELS
@@ -22,11 +21,11 @@ from pydantic import BaseModel
 from open_webui.utils.auth import get_verified_user, get_password_hash, get_verified_user
 from open_webui.utils.access_control import get_permissions
 
-
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["MODELS"])
 
 router = APIRouter()
+
 
 ############################
 # GetUsers
@@ -35,9 +34,9 @@ router = APIRouter()
 
 @router.get("/", response_model=list[UserModel])
 async def get_users(
-    skip: Optional[int] = None,
-    limit: Optional[int] = None,
-    user=Depends(get_verified_user),
+        skip: Optional[int] = None,
+        limit: Optional[int] = None,
+        user=Depends(get_verified_user),
 ):
     return Users.get_users(skip, limit)
 
@@ -130,7 +129,7 @@ async def get_default_user_permissions(request: Request, user=Depends(get_verifi
 
 @router.post("/default/permissions")
 async def update_default_user_permissions(
-    request: Request, form_data: UserPermissions, user=Depends(get_verified_user)
+        request: Request, form_data: UserPermissions, user=Depends(get_verified_user)
 ):
     request.app.state.config.USER_PERMISSIONS = form_data.model_dump()
     return request.app.state.config.USER_PERMISSIONS
@@ -176,16 +175,17 @@ async def get_user_settings_by_session_user(user=Depends(get_verified_user)):
 
 @router.post("/user/settings/update", response_model=UserSettings)
 async def update_user_settings_by_session_user(
-    form_data: UserSettings, user=Depends(get_verified_user)
+        form_data: UserSettings, user=Depends(get_verified_user)
 ):
-    user = Users.update_user_settings_by_id(user.id, form_data.model_dump())
-    if user:
-        return user.settings
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.USER_NOT_FOUND,
-        )
+    return form_data.model_dump()
+    # user = Users.update_user_settings_by_id(user.id, form_data.model_dump())
+    # if user:
+    #     return user.settings
+    # else:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail=ERROR_MESSAGES.USER_NOT_FOUND,
+    #     )
 
 
 ############################
@@ -212,7 +212,7 @@ async def get_user_info_by_session_user(user=Depends(get_verified_user)):
 
 @router.post("/user/info/update", response_model=Optional[dict])
 async def update_user_info_by_session_user(
-    form_data: dict, user=Depends(get_verified_user)
+        form_data: dict, user=Depends(get_verified_user)
 ):
     user = Users.get_user_by_id(user.id)
     if user:
@@ -284,9 +284,9 @@ async def get_user_by_id(user_id: str, user=Depends(get_verified_user)):
 
 @router.post("/{user_id}/update", response_model=Optional[UserModel])
 async def update_user_by_id(
-    user_id: str,
-    form_data: UserUpdateForm,
-    session_user=Depends(get_verified_user),
+        user_id: str,
+        form_data: UserUpdateForm,
+        session_user=Depends(get_verified_user),
 ):
     user = Users.get_user_by_id(user_id)
 

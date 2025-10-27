@@ -18,7 +18,6 @@
 
 	const i18n = getContext('i18n');
 
-	export let user;
 	export let model;
 
 	export let exportHandler: Function;

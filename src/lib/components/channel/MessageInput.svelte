@@ -21,7 +21,6 @@
 	import FilesOverlay from '../chat/MessageInput/FilesOverlay.svelte';
 
 	export let placeholder = $i18n.t('Send a Message');
-	export let transparentBackground = false;
 
 	export let id = null;
 
@@ -303,9 +302,7 @@
 />
 <div class="bg-transparent">
 	<div
-		class="{($settings?.widescreenMode ?? null)
-			? 'max-w-full'
-			: 'max-w-6xl'} px-5.5 mx-auto inset-x-0 relative 
+		class="{($settings?.widescreenMode ?? null) ? 'max-w-full' : 'max-w-6xl'} px-5.5 mx-auto inset-x-0 relative"
 	>
 		<div class="absolute top-0 left-0 right-0 mx-auto inset-x-0 bg-transparent flex justify-center">
 			<div class="flex flex-col px-3 w-full">

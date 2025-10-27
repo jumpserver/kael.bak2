@@ -13,6 +13,7 @@ from open_webui.utils.access_control import has_access, has_permission
 
 router = APIRouter()
 
+
 ############################
 # GetPrompts
 ############################
@@ -39,7 +40,7 @@ async def get_prompt_list(user=Depends(get_verified_user)):
 
 @router.post("/create", response_model=Optional[PromptModel])
 async def create_new_prompt(
-    request: Request, form_data: PromptForm, user=Depends(get_verified_user)
+        request: Request, form_data: PromptForm, user=Depends(get_verified_user)
 ):
     prompt = Prompts.get_prompt_by_command(form_data.command)
     if prompt is None:
@@ -69,6 +70,7 @@ async def get_prompt_by_command(command: str, user=Depends(get_verified_user)):
     if prompt:
         return prompt
 
+
 ############################
 # UpdatePromptByCommand
 ############################
@@ -76,9 +78,9 @@ async def get_prompt_by_command(command: str, user=Depends(get_verified_user)):
 
 @router.post("/command/{command}/update", response_model=Optional[PromptModel])
 async def update_prompt_by_command(
-    command: str,
-    form_data: PromptForm,
-    user=Depends(get_verified_user),
+        command: str,
+        form_data: PromptForm,
+        user=Depends(get_verified_user),
 ):
     prompt = Prompts.get_prompt_by_command(f"/{command}")
     if not prompt:

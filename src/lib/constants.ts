@@ -1,5 +1,5 @@
-import { browser, dev } from '$app/environment';
-// import { version } from '../../package.json';
+const browser = typeof window !== 'undefined';
+const dev = typeof import.meta !== 'undefined' && !!import.meta.env?.DEV;
 
 export const APP_NAME = 'JumpServer Chat';
 
