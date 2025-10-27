@@ -570,19 +570,19 @@ async def archive_chat_by_id(id: str, user=Depends(get_verified_user)):
         chat = Chats.toggle_chat_archive_by_id(id)
 
         # Delete tags if chat is archived
-        if chat.archived:
-            for tag_id in chat.meta.get("tags", []):
+        if chat['archived']:
+            for tag_id in chat['meta'].get("tags", []):
                 if Chats.count_chats_by_tag_name_and_user_id(tag_id, user.id) == 0:
                     log.debug(f"deleting tag: {tag_id}")
                     Tags.delete_tag_by_name_and_user_id(tag_id, user.id)
         else:
-            for tag_id in chat.meta.get("tags", []):
+            for tag_id in chat['meta'].get("tags", []):
                 tag = Tags.get_tag_by_name_and_user_id(tag_id, user.id)
                 if tag is None:
                     log.debug(f"inserting tag: {tag_id}")
                     tag = Tags.insert_new_tag(tag_id, user.id)
 
-        return ChatResponse(**chat.model_dump())
+        return ChatResponse(**chat)
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=ERROR_MESSAGES.DEFAULT()

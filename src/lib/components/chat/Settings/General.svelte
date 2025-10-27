@@ -319,16 +319,16 @@
 			</div>
 
 			<div class="mt-2 space-y-3 pr-1.5">
-				<div class="flex justify-between items-center text-sm">
-					<div class="  font-medium">{$i18n.t('Advanced Parameters')}</div>
-					<button
-						class=" text-xs font-medium text-gray-500"
-						type="button"
-						on:click={() => {
-							showAdvanced = !showAdvanced;
-						}}>{showAdvanced ? $i18n.t('Hide') : $i18n.t('Show')}</button
-					>
-				</div>
+<!--				<div class="flex justify-between items-center text-sm">-->
+<!--					<div class="  font-medium">{$i18n.t('Advanced Parameters')}</div>-->
+<!--					<button-->
+<!--						class=" text-xs font-medium text-gray-500"-->
+<!--						type="button"-->
+<!--						on:click={() => {-->
+<!--							showAdvanced = !showAdvanced;-->
+<!--						}}>{showAdvanced ? $i18n.t('Hide') : $i18n.t('Show')}</button-->
+<!--					>-->
+<!--				</div>-->
 
 				{#if showAdvanced}
 					<AdvancedParams admin={$user?.role === 'admin'} bind:params />
