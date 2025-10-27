@@ -25,14 +25,12 @@ from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 import tiktoken
 
-
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TokenTextSplitter
 from langchain_core.documents import Document
 
 from open_webui.models.files import FileModel, Files
 from open_webui.models.knowledge import Knowledges
 from open_webui.storage.provider import Storage
-
 
 from open_webui.retrieval.vector.connector import VECTOR_DB_CLIENT
 
@@ -96,6 +94,7 @@ from open_webui.constants import ERROR_MESSAGES
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["RAG"])
 
+
 ##########################################
 #
 # Utility functions
@@ -104,9 +103,9 @@ log.setLevel(SRC_LOG_LEVELS["RAG"])
 
 
 def get_ef(
-    engine: str,
-    embedding_model: str,
-    auto_update: bool = False,
+        engine: str,
+        embedding_model: str,
+        auto_update: bool = False,
 ):
     ef = None
     if embedding_model and engine == "":
@@ -125,8 +124,8 @@ def get_ef(
 
 
 def get_rf(
-    reranking_model: Optional[str] = None,
-    auto_update: bool = False,
+        reranking_model: Optional[str] = None,
+        auto_update: bool = False,
 ):
     rf = None
     if reranking_model:
@@ -239,7 +238,7 @@ class EmbeddingModelUpdateForm(BaseModel):
 
 @router.post("/embedding/update")
 async def update_embedding_config(
-    request: Request, form_data: EmbeddingModelUpdateForm, user=Depends(get_verified_user)
+        request: Request, form_data: EmbeddingModelUpdateForm, user=Depends(get_verified_user)
 ):
     log.info(
         f"Updating embedding model: {request.app.state.config.RAG_EMBEDDING_MODEL} to {form_data.embedding_model}"
@@ -319,7 +318,7 @@ class RerankingModelUpdateForm(BaseModel):
 
 @router.post("/reranking/update")
 async def update_reranking_config(
-    request: Request, form_data: RerankingModelUpdateForm, user=Depends(get_verified_user)
+        request: Request, form_data: RerankingModelUpdateForm, user=Depends(get_verified_user)
 ):
     log.info(
         f"Updating reranking model: {request.app.state.config.RAG_RERANKING_MODEL} to {form_data.reranking_model}"
@@ -508,7 +507,7 @@ class ConfigForm(BaseModel):
 
 @router.post("/config/update")
 async def update_rag_config(
-    request: Request, form_data: ConfigForm, user=Depends(get_verified_user)
+        request: Request, form_data: ConfigForm, user=Depends(get_verified_user)
 ):
     # RAG settings
     request.app.state.config.RAG_TEMPLATE = (
@@ -793,14 +792,14 @@ async def update_rag_config(
 
 
 def save_docs_to_vector_db(
-    request: Request,
-    docs,
-    collection_name,
-    metadata: Optional[dict] = None,
-    overwrite: bool = False,
-    split: bool = True,
-    add: bool = False,
-    user=None,
+        request: Request,
+        docs,
+        collection_name,
+        metadata: Optional[dict] = None,
+        overwrite: bool = False,
+        split: bool = True,
+        add: bool = False,
+        user=None,
 ) -> bool:
     def _get_docs_info(docs: list[Document]) -> str:
         docs_info = set()
@@ -882,9 +881,9 @@ def save_docs_to_vector_db(
     for metadata in metadatas:
         for key, value in metadata.items():
             if (
-                isinstance(value, datetime)
-                or isinstance(value, list)
-                or isinstance(value, dict)
+                    isinstance(value, datetime)
+                    or isinstance(value, list)
+                    or isinstance(value, dict)
             ):
                 metadata[key] = str(value)
 
@@ -953,9 +952,9 @@ class ProcessFileForm(BaseModel):
 
 @router.post("/process/file")
 def process_file(
-    request: Request,
-    form_data: ProcessFileForm,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: ProcessFileForm,
+        user=Depends(get_verified_user),
 ):
     try:
         file = Files.get_file_by_id(form_data.file_id)
@@ -1138,9 +1137,9 @@ class ProcessTextForm(BaseModel):
 
 @router.post("/process/text")
 def process_text(
-    request: Request,
-    form_data: ProcessTextForm,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: ProcessTextForm,
+        user=Depends(get_verified_user),
 ):
     collection_name = form_data.collection_name
     if collection_name is None:
@@ -1171,7 +1170,7 @@ def process_text(
 
 @router.post("/process/youtube")
 def process_youtube_video(
-    request: Request, form_data: ProcessUrlForm, user=Depends(get_verified_user)
+        request: Request, form_data: ProcessUrlForm, user=Depends(get_verified_user)
 ):
     try:
         collection_name = form_data.collection_name
@@ -1215,7 +1214,7 @@ def process_youtube_video(
 
 @router.post("/process/web")
 def process_web(
-    request: Request, form_data: ProcessUrlForm, user=Depends(get_verified_user)
+        request: Request, form_data: ProcessUrlForm, user=Depends(get_verified_user)
 ):
     try:
         collection_name = form_data.collection_name
@@ -1296,8 +1295,8 @@ def search_web(request: Request, engine: str, query: str) -> list[SearchResult]:
             raise Exception("No SEARXNG_QUERY_URL found in environment variables")
     elif engine == "google_pse":
         if (
-            request.app.state.config.GOOGLE_PSE_API_KEY
-            and request.app.state.config.GOOGLE_PSE_ENGINE_ID
+                request.app.state.config.GOOGLE_PSE_API_KEY
+                and request.app.state.config.GOOGLE_PSE_ENGINE_ID
         ):
             return search_google_pse(
                 request.app.state.config.GOOGLE_PSE_API_KEY,
@@ -1450,8 +1449,8 @@ def search_web(request: Request, engine: str, query: str) -> list[SearchResult]:
         )
     elif engine == "sougou":
         if (
-            request.app.state.config.SOUGOU_API_SID
-            and request.app.state.config.SOUGOU_API_SK
+                request.app.state.config.SOUGOU_API_SID
+                and request.app.state.config.SOUGOU_API_SK
         ):
             return search_sougou(
                 request.app.state.config.SOUGOU_API_SID,
@@ -1470,7 +1469,7 @@ def search_web(request: Request, engine: str, query: str) -> list[SearchResult]:
 
 @router.post("/process/web/search")
 async def process_web_search(
-    request: Request, form_data: SearchForm, user=Depends(get_verified_user)
+        request: Request, form_data: SearchForm, user=Depends(get_verified_user)
 ):
     try:
         logging.info(
@@ -1559,9 +1558,9 @@ class QueryDocForm(BaseModel):
 
 @router.post("/query/doc")
 def query_doc_handler(
-    request: Request,
-    form_data: QueryDocForm,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: QueryDocForm,
+        user=Depends(get_verified_user),
 ):
     try:
         if request.app.state.config.ENABLE_RAG_HYBRID_SEARCH:
@@ -1579,7 +1578,7 @@ def query_doc_handler(
                 k=form_data.k if form_data.k else request.app.state.config.TOP_K,
                 reranking_function=request.app.state.rf,
                 k_reranker=form_data.k_reranker
-                or request.app.state.config.TOP_K_RERANKER,
+                           or request.app.state.config.TOP_K_RERANKER,
                 r=(
                     form_data.r
                     if form_data.r
@@ -1615,9 +1614,9 @@ class QueryCollectionsForm(BaseModel):
 
 @router.post("/query/collection")
 def query_collection_handler(
-    request: Request,
-    form_data: QueryCollectionsForm,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: QueryCollectionsForm,
+        user=Depends(get_verified_user),
 ):
     try:
         if request.app.state.config.ENABLE_RAG_HYBRID_SEARCH:
@@ -1630,7 +1629,7 @@ def query_collection_handler(
                 k=form_data.k if form_data.k else request.app.state.config.TOP_K,
                 reranking_function=request.app.state.rf,
                 k_reranker=form_data.k_reranker
-                or request.app.state.config.TOP_K_RERANKER,
+                           or request.app.state.config.TOP_K_RERANKER,
                 r=(
                     form_data.r
                     if form_data.r
@@ -1716,7 +1715,6 @@ def reset_upload_dir(user=Depends(get_verified_user)) -> bool:
 
 
 if ENV == "dev":
-
     @router.get("/ef/{text}")
     async def get_embeddings(request: Request, text: Optional[str] = "Hello World!"):
         return {
@@ -1744,9 +1742,9 @@ class BatchProcessFilesResponse(BaseModel):
 
 @router.post("/process/files/batch")
 def process_files_batch(
-    request: Request,
-    form_data: BatchProcessFilesForm,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: BatchProcessFilesForm,
+        user=Depends(get_verified_user),
 ) -> BatchProcessFilesResponse:
     """
     Process a batch of files and save them to the vector database.

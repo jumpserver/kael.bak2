@@ -272,6 +272,7 @@ async def get_file_data_content_by_id(id: str, user=Depends(get_verified_user)):
 
     return {"content": file.data.get("content", "")}
 
+
 ############################
 # Update File Data Content By Id
 ############################
@@ -403,6 +404,7 @@ async def get_html_file_content_by_id(id: str, user=Depends(get_verified_user)):
             detail=ERROR_MESSAGES.DEFAULT("Error getting file content"),
         )
 
+
 @router.get("/{id}/content/{file_name}")
 async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
     file = Files.get_file_by_id(id)
@@ -448,6 +450,7 @@ async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
             media_type="text/plain",
             headers=headers,
         )
+
 
 ############################
 # Delete File By Id

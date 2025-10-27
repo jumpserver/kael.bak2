@@ -27,7 +27,6 @@ log.setLevel(SRC_LOG_LEVELS["IMAGES"])
 IMAGE_CACHE_DIR = CACHE_DIR / "image" / "generations"
 IMAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-
 router = APIRouter()
 
 
@@ -98,7 +97,7 @@ class ConfigForm(BaseModel):
 
 @router.post("/config/update")
 async def update_config(
-    request: Request, form_data: ConfigForm, user=Depends(get_verified_user)
+        request: Request, form_data: ConfigForm, user=Depends(get_verified_user)
 ):
     request.app.state.config.IMAGE_GENERATION_ENGINE = form_data.engine
     request.app.state.config.ENABLE_IMAGE_GENERATION = form_data.enabled
@@ -265,8 +264,8 @@ def get_image_model(request):
             else ""
         )
     elif (
-        request.app.state.config.IMAGE_GENERATION_ENGINE == "automatic1111"
-        or request.app.state.config.IMAGE_GENERATION_ENGINE == ""
+            request.app.state.config.IMAGE_GENERATION_ENGINE == "automatic1111"
+            or request.app.state.config.IMAGE_GENERATION_ENGINE == ""
     ):
         try:
             r = requests.get(
@@ -297,7 +296,7 @@ async def get_image_config(request: Request, user=Depends(get_verified_user)):
 
 @router.post("/image/config/update")
 async def update_image_config(
-    request: Request, form_data: ImageConfigForm, user=Depends(get_verified_user)
+        request: Request, form_data: ImageConfigForm, user=Depends(get_verified_user)
 ):
     set_image_model(request, form_data.MODEL)
 
@@ -387,8 +386,8 @@ def get_models(request: Request, user=Depends(get_verified_user)):
                     )
                 )
         elif (
-            request.app.state.config.IMAGE_GENERATION_ENGINE == "automatic1111"
-            or request.app.state.config.IMAGE_GENERATION_ENGINE == ""
+                request.app.state.config.IMAGE_GENERATION_ENGINE == "automatic1111"
+                or request.app.state.config.IMAGE_GENERATION_ENGINE == ""
         ):
             r = requests.get(
                 url=f"{request.app.state.config.AUTOMATIC1111_BASE_URL}/sdapi/v1/sd-models",
@@ -465,8 +464,8 @@ def upload_image(request, image_metadata, image_data, content_type, user):
 
 @router.post("/generations")
 async def image_generations(
-    request: Request,
-    form_data: GenerateImageForm,
+        request: Request,
+        form_data: GenerateImageForm,
 ):
     width, height = tuple(map(int, request.app.state.config.IMAGE_SIZE.split("x")))
 
@@ -607,8 +606,8 @@ async def image_generations(
                 images.append({"url": url})
             return images
         elif (
-            request.app.state.config.IMAGE_GENERATION_ENGINE == "automatic1111"
-            or request.app.state.config.IMAGE_GENERATION_ENGINE == ""
+                request.app.state.config.IMAGE_GENERATION_ENGINE == "automatic1111"
+                or request.app.state.config.IMAGE_GENERATION_ENGINE == ""
         ):
             if form_data.model:
                 set_image_model(form_data.model)

@@ -1,5 +1,7 @@
 import logging
 from typing import Optional
+from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Header
 
 from open_webui.socket.main import get_event_emitter
 from open_webui.models.chats import (
@@ -11,14 +13,9 @@ from open_webui.models.chats import (
 )
 from open_webui.models.tags import TagModel, Tags
 from open_webui.models.folders import Folders
-
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import SRC_LOG_LEVELS
-from fastapi import APIRouter, Depends, HTTPException, Request, status, Header
-from pydantic import BaseModel
-
 from open_webui.utils.auth import get_verified_user
-from open_webui.utils.access_control import has_permission
 
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["MODELS"])
@@ -42,7 +39,7 @@ async def get_session_user_chat_list(
         limit = 60
         skip = (page - 1) * limit
 
-        return Chats.get_chat_title_id_list_by_user_id(user.id,sid, skip=skip, limit=limit)
+        return Chats.get_chat_title_id_list_by_user_id(user.id, sid, skip=skip, limit=limit)
     else:
         return Chats.get_chat_title_id_list_by_user_id(user.id, sid)
 

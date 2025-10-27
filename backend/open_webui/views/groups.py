@@ -17,11 +17,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from open_webui.utils.auth import get_verified_user
 from open_webui.env import SRC_LOG_LEVELS
 
-
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["MAIN"])
 
 router = APIRouter()
+
 
 ############################
 # GetFunctions
@@ -81,7 +81,7 @@ async def get_group_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.post("/id/{id}/update", response_model=Optional[GroupResponse])
 async def update_group_by_id(
-    id: str, form_data: GroupUpdateForm, user=Depends(get_verified_user)
+        id: str, form_data: GroupUpdateForm, user=Depends(get_verified_user)
 ):
     try:
         if form_data.user_ids:

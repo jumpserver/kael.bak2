@@ -9,7 +9,6 @@ from open_webui.config import BannerModel
 
 from open_webui.utils.tools import get_tool_server_data, get_tool_servers_data
 
-
 router = APIRouter()
 
 
@@ -56,9 +55,9 @@ async def get_direct_connections_config(request: Request, user=Depends(get_verif
 
 @router.post("/direct_connections", response_model=DirectConnectionsConfigForm)
 async def set_direct_connections_config(
-    request: Request,
-    form_data: DirectConnectionsConfigForm,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: DirectConnectionsConfigForm,
+        user=Depends(get_verified_user),
 ):
     request.app.state.config.ENABLE_DIRECT_CONNECTIONS = (
         form_data.ENABLE_DIRECT_CONNECTIONS
@@ -96,9 +95,9 @@ async def get_tool_servers_config(request: Request, user=Depends(get_verified_us
 
 @router.post("/tool_servers", response_model=ToolServersConfigForm)
 async def set_tool_servers_config(
-    request: Request,
-    form_data: ToolServersConfigForm,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: ToolServersConfigForm,
+        user=Depends(get_verified_user),
 ):
     request.app.state.config.TOOL_SERVER_CONNECTIONS = [
         connection.model_dump() for connection in form_data.TOOL_SERVER_CONNECTIONS
@@ -115,7 +114,7 @@ async def set_tool_servers_config(
 
 @router.post("/tool_servers/verify")
 async def verify_tool_servers_config(
-    request: Request, form_data: ToolServerConnection, user=Depends(get_verified_user)
+        request: Request, form_data: ToolServerConnection, user=Depends(get_verified_user)
 ):
     """
     Verify the connection to the tool server.
@@ -181,9 +180,8 @@ async def get_code_execution_config(request: Request, user=Depends(get_verified_
 
 @router.post("/code_execution", response_model=CodeInterpreterConfigForm)
 async def set_code_execution_config(
-    request: Request, form_data: CodeInterpreterConfigForm, user=Depends(get_verified_user)
+        request: Request, form_data: CodeInterpreterConfigForm, user=Depends(get_verified_user)
 ):
-
     request.app.state.config.ENABLE_CODE_EXECUTION = form_data.ENABLE_CODE_EXECUTION
 
     request.app.state.config.CODE_EXECUTION_ENGINE = form_data.CODE_EXECUTION_ENGINE
@@ -264,7 +262,7 @@ async def get_models_config(request: Request, user=Depends(get_verified_user)):
 
 @router.post("/models", response_model=ModelsConfigForm)
 async def set_models_config(
-    request: Request, form_data: ModelsConfigForm, user=Depends(get_verified_user)
+        request: Request, form_data: ModelsConfigForm, user=Depends(get_verified_user)
 ):
     request.app.state.config.DEFAULT_MODELS = form_data.DEFAULT_MODELS
     request.app.state.config.MODEL_ORDER_LIST = form_data.MODEL_ORDER_LIST
@@ -285,9 +283,9 @@ class SetDefaultSuggestionsForm(BaseModel):
 
 @router.post("/suggestions", response_model=list[PromptSuggestion])
 async def set_default_suggestions(
-    request: Request,
-    form_data: SetDefaultSuggestionsForm,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: SetDefaultSuggestionsForm,
+        user=Depends(get_verified_user),
 ):
     data = form_data.model_dump()
     request.app.state.config.DEFAULT_PROMPT_SUGGESTIONS = data["suggestions"]
@@ -305,9 +303,9 @@ class SetBannersForm(BaseModel):
 
 @router.post("/banners", response_model=list[BannerModel])
 async def set_banners(
-    request: Request,
-    form_data: SetBannersForm,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: SetBannersForm,
+        user=Depends(get_verified_user),
 ):
     data = form_data.model_dump()
     request.app.state.config.BANNERS = data["banners"]
@@ -316,7 +314,7 @@ async def set_banners(
 
 @router.get("/banners", response_model=list[BannerModel])
 async def get_banners(
-    request: Request,
-    user=Depends(get_verified_user),
+        request: Request,
+        user=Depends(get_verified_user),
 ):
     return request.app.state.config.BANNERS

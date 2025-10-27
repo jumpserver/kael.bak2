@@ -7,7 +7,6 @@ from typing import Optional
 from pydantic import BaseModel
 import mimetypes
 
-
 from open_webui.models.folders import (
     FolderForm,
     FolderModel,
@@ -19,18 +18,14 @@ from open_webui.config import UPLOAD_DIR
 from open_webui.env import SRC_LOG_LEVELS
 from open_webui.constants import ERROR_MESSAGES
 
-
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, Request
 from fastapi.responses import FileResponse, StreamingResponse
-
 
 from open_webui.utils.auth import get_verified_user, get_verified_user
 from open_webui.utils.access_control import has_permission
 
-
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["MODELS"])
-
 
 router = APIRouter()
 
@@ -113,7 +108,7 @@ async def get_folder_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.post("/{id}/update")
 async def update_folder_name_by_id(
-    id: str, form_data: FolderForm, user=Depends(get_verified_user)
+        id: str, form_data: FolderForm, user=Depends(get_verified_user)
 ):
     folder = Folders.get_folder_by_id_and_user_id(id, user.id)
     if folder:
@@ -157,7 +152,7 @@ class FolderParentIdForm(BaseModel):
 
 @router.post("/{id}/update/parent")
 async def update_folder_parent_id_by_id(
-    id: str, form_data: FolderParentIdForm, user=Depends(get_verified_user)
+        id: str, form_data: FolderParentIdForm, user=Depends(get_verified_user)
 ):
     folder = Folders.get_folder_by_id_and_user_id(id, user.id)
     if folder:
@@ -201,7 +196,7 @@ class FolderIsExpandedForm(BaseModel):
 
 @router.post("/{id}/update/expanded")
 async def update_folder_is_expanded_by_id(
-    id: str, form_data: FolderIsExpandedForm, user=Depends(get_verified_user)
+        id: str, form_data: FolderIsExpandedForm, user=Depends(get_verified_user)
 ):
     folder = Folders.get_folder_by_id_and_user_id(id, user.id)
     if folder:
@@ -231,7 +226,7 @@ async def update_folder_is_expanded_by_id(
 
 @router.delete("/{id}")
 async def delete_folder_by_id(
-    request: Request, id: str, user=Depends(get_verified_user)
+        request: Request, id: str, user=Depends(get_verified_user)
 ):
     chat_delete_permission = has_permission(
         user.id, "chat.delete", request.app.state.config.USER_PERMISSIONS

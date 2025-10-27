@@ -1,5 +1,9 @@
 import uuid
 import logging
+from typing import Optional
+from pydantic import BaseModel
+from fastapi.responses import Response
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from open_webui.models.auths import (
     AddUserForm,
@@ -11,44 +15,30 @@ from open_webui.models.auths import (
     UserResponse,
 )
 from open_webui.models.users import Users
-
-from open_webui.constants import ERROR_MESSAGES, WEBHOOK_MESSAGES
+from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import (
     WEBUI_AUTH,
-    WEBUI_AUTH_TRUSTED_EMAIL_HEADER,
-    WEBUI_AUTH_TRUSTED_NAME_HEADER,
-    WEBUI_AUTH_COOKIE_SAME_SITE,
-    WEBUI_AUTH_COOKIE_SECURE,
     SRC_LOG_LEVELS,
+    WEBUI_AUTH_COOKIE_SECURE,
+    WEBUI_AUTH_COOKIE_SAME_SITE,
+    WEBUI_AUTH_TRUSTED_NAME_HEADER,
+    WEBUI_AUTH_TRUSTED_EMAIL_HEADER,
 )
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import Response
-from open_webui.config import ENABLE_LDAP
-from pydantic import BaseModel
+
 from open_webui.utils.misc import validate_email_format
+from open_webui.utils.access_control import get_permissions
 from open_webui.utils.auth import (
-    create_api_key,
     create_token,
-    get_verified_user,
     get_verified_user,
     get_current_user,
     get_password_hash,
 )
-from open_webui.utils.webhook import post_webhook
-from open_webui.utils.access_control import get_permissions
-
-from typing import Optional, List
-
-from ssl import CERT_REQUIRED, PROTOCOL_TLS
-
-if ENABLE_LDAP.value:
-    from ldap3 import Server, Connection, NONE, Tls
-    from ldap3.utils.conv import escape_filter_chars
 
 router = APIRouter()
 
 log = logging.getLogger(__name__)
 log.setLevel(SRC_LOG_LEVELS["MAIN"])
+
 
 ############################
 # GetSessionUser
@@ -62,7 +52,7 @@ class SessionUserResponse(Token, UserResponse):
 
 @router.get("/")
 async def get_session_user(
-    request: Request, user=Depends(get_current_user)
+        request: Request, user=Depends(get_current_user)
 ):
     return {
         "expires_at": None,
@@ -71,6 +61,7 @@ async def get_session_user(
         "role": 'admin',
         "permissions": request.app.state.config.USER_PERMISSIONS,
     }
+
 
 @router.post("/signin", response_model=SessionUserResponse)
 async def signin(request: Request, response: Response, form_data: SigninForm):
@@ -165,7 +156,6 @@ async def signout(request: Request, response: Response):
     response.delete_cookie("token")
 
     return {"status": True}
-
 
 
 @router.post("/add", response_model=SigninResponse)
@@ -277,7 +267,7 @@ class AdminConfig(BaseModel):
 
 @router.post("/admin/config")
 async def update_admin_config(
-    request: Request, form_data: AdminConfig, user=Depends(get_verified_user)
+        request: Request, form_data: AdminConfig, user=Depends(get_verified_user)
 ):
     request.app.state.config.SHOW_ADMIN_DETAILS = form_data.SHOW_ADMIN_DETAILS
     request.app.state.config.WEBUI_URL = form_data.WEBUI_URL

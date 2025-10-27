@@ -41,9 +41,9 @@ class UpdateConfigForm(BaseModel):
 
 @router.post("/config")
 async def update_config(
-    request: Request,
-    form_data: UpdateConfigForm,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: UpdateConfigForm,
+        user=Depends(get_verified_user),
 ):
     config = request.app.state.config
     if form_data.ENABLE_EVALUATION_ARENA_MODELS is not None:
@@ -116,9 +116,9 @@ async def delete_feedbacks(user=Depends(get_verified_user)):
 
 @router.post("/feedback", response_model=FeedbackModel)
 async def create_feedback(
-    request: Request,
-    form_data: FeedbackForm,
-    user=Depends(get_verified_user),
+        request: Request,
+        form_data: FeedbackForm,
+        user=Depends(get_verified_user),
 ):
     feedback = Feedbacks.insert_new_feedback(user_id=user.id, form_data=form_data)
     if not feedback:
@@ -144,7 +144,7 @@ async def get_feedback_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.post("/feedback/{id}", response_model=FeedbackModel)
 async def update_feedback_by_id(
-    id: str, form_data: FeedbackForm, user=Depends(get_verified_user)
+        id: str, form_data: FeedbackForm, user=Depends(get_verified_user)
 ):
     feedback = Feedbacks.update_feedback_by_id_and_user_id(
         id=id, user_id=user.id, form_data=form_data

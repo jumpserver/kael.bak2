@@ -22,7 +22,6 @@ from open_webui.env import SRC_LOG_LEVELS, AIOHTTP_CLIENT_SESSION_SSL
 from open_webui.config import CACHE_DIR
 from open_webui.constants import ERROR_MESSAGES
 
-
 from open_webui.views.openai import get_all_models_responses
 
 from open_webui.utils.auth import get_verified_user
@@ -43,15 +42,15 @@ def get_sorted_filters(model_id, models):
         model
         for model in models.values()
         if "pipeline" in model
-        and "type" in model["pipeline"]
-        and model["pipeline"]["type"] == "filter"
-        and (
-            model["pipeline"]["pipelines"] == ["*"]
-            or any(
-                model_id == target_model_id
-                for target_model_id in model["pipeline"]["pipelines"]
-            )
-        )
+           and "type" in model["pipeline"]
+           and model["pipeline"]["type"] == "filter"
+           and (
+                   model["pipeline"]["pipelines"] == ["*"]
+                   or any(
+               model_id == target_model_id
+               for target_model_id in model["pipeline"]["pipelines"]
+           )
+           )
     ]
     sorted_filters = sorted(filters, key=lambda x: x["pipeline"]["priority"])
     return sorted_filters
@@ -86,10 +85,10 @@ async def process_pipeline_inlet_filter(request, payload, user, models):
 
             try:
                 async with session.post(
-                    f"{url}/{filter['id']}/filter/inlet",
-                    headers=headers,
-                    json=request_data,
-                    ssl=AIOHTTP_CLIENT_SESSION_SSL
+                        f"{url}/{filter['id']}/filter/inlet",
+                        headers=headers,
+                        json=request_data,
+                        ssl=AIOHTTP_CLIENT_SESSION_SSL
                 ) as response:
                     payload = await response.json()
                     response.raise_for_status()
@@ -136,10 +135,10 @@ async def process_pipeline_outlet_filter(request, payload, user, models):
 
             try:
                 async with session.post(
-                    f"{url}/{filter['id']}/filter/outlet",
-                    headers=headers,
-                    json=request_data,
-                    ssl=AIOHTTP_CLIENT_SESSION_SSL
+                        f"{url}/{filter['id']}/filter/outlet",
+                        headers=headers,
+                        json=request_data,
+                        ssl=AIOHTTP_CLIENT_SESSION_SSL
                 ) as response:
                     payload = await response.json()
                     response.raise_for_status()
@@ -193,10 +192,10 @@ async def get_pipelines_list(request: Request):
 
 @router.post("/upload")
 async def upload_pipeline(
-    request: Request,
-    urlIdx: int = Form(...),
-    file: UploadFile = File(...),
-    user=Depends(get_verified_user),
+        request: Request,
+        urlIdx: int = Form(...),
+        file: UploadFile = File(...),
+        user=Depends(get_verified_user),
 ):
     log.info(f"upload_pipeline: urlIdx={urlIdx}, filename={file.filename}")
     # Check if the uploaded file is a python file
@@ -263,7 +262,7 @@ class AddPipelineForm(BaseModel):
 
 @router.post("/add")
 async def add_pipeline(
-    request: Request, form_data: AddPipelineForm, user=Depends(get_verified_user)
+        request: Request, form_data: AddPipelineForm, user=Depends(get_verified_user)
 ):
     r = None
     try:
@@ -308,7 +307,7 @@ class DeletePipelineForm(BaseModel):
 
 @router.delete("/delete")
 async def delete_pipeline(
-    request: Request, form_data: DeletePipelineForm, user=Depends(get_verified_user)
+        request: Request, form_data: DeletePipelineForm, user=Depends(get_verified_user)
 ):
     r = None
     try:
@@ -348,7 +347,7 @@ async def delete_pipeline(
 
 @router.get("/")
 async def get_pipelines(
-    request: Request, urlIdx: Optional[int] = None, user=Depends(get_verified_user)
+        request: Request, urlIdx: Optional[int] = None, user=Depends(get_verified_user)
 ):
     r = None
     try:
@@ -382,10 +381,10 @@ async def get_pipelines(
 
 @router.get("/{pipeline_id}/valves")
 async def get_pipeline_valves(
-    request: Request,
-    urlIdx: Optional[int],
-    pipeline_id: str,
-    user=Depends(get_verified_user),
+        request: Request,
+        urlIdx: Optional[int],
+        pipeline_id: str,
+        user=Depends(get_verified_user),
 ):
     r = None
     try:
@@ -421,10 +420,10 @@ async def get_pipeline_valves(
 
 @router.get("/{pipeline_id}/valves/spec")
 async def get_pipeline_valves_spec(
-    request: Request,
-    urlIdx: Optional[int],
-    pipeline_id: str,
-    user=Depends(get_verified_user),
+        request: Request,
+        urlIdx: Optional[int],
+        pipeline_id: str,
+        user=Depends(get_verified_user),
 ):
     r = None
     try:
@@ -461,11 +460,11 @@ async def get_pipeline_valves_spec(
 
 @router.post("/{pipeline_id}/valves/update")
 async def update_pipeline_valves(
-    request: Request,
-    urlIdx: Optional[int],
-    pipeline_id: str,
-    form_data: dict,
-    user=Depends(get_verified_user),
+        request: Request,
+        urlIdx: Optional[int],
+        pipeline_id: str,
+        form_data: dict,
+        user=Depends(get_verified_user),
 ):
     r = None
     try:

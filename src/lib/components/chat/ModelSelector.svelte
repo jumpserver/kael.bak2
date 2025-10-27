@@ -9,9 +9,6 @@
 	const i18n = getContext('i18n');
 
 	export let selectedModels = [''];
-	export let disabled = false;
-
-	export let showSetDefault = true;
 
 	const saveDefaultModel = async () => {
 		const hasEmptyModel = selectedModels.filter((it) => it === '');

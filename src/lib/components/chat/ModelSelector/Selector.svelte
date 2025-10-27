@@ -40,8 +40,6 @@
 	export let searchEnabled = true;
 	export let searchPlaceholder = $i18n.t('Search a model');
 
-	export let showTemporaryChatControl = false;
-
 	export let items: {
 		label: string;
 		value: string;
