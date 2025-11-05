@@ -1092,20 +1092,20 @@ async def process_chat_response(
                     )
 
                     # Send a webhook notification if the user is not active
-                    if get_active_status_by_user_id(user.id) is None:
-                        webhook_url = Users.get_user_webhook_url_by_id(user.id)
-                        if webhook_url:
-                            post_webhook(
-                                request.app.state.WEBUI_NAME,
-                                webhook_url,
-                                f"{title} - {request.app.state.config.WEBUI_URL}/c/{metadata['chat_id']}\n\n{content}",
-                                {
-                                    "action": "chat",
-                                    "message": content,
-                                    "title": title,
-                                    "url": f"{request.app.state.config.WEBUI_URL}/c/{metadata['chat_id']}",
-                                },
-                            )
+                    # if get_active_status_by_user_id(user.id) is None:
+                    #     webhook_url = Users.get_user_webhook_url_by_id(user.id)
+                    #     if webhook_url:
+                    #         post_webhook(
+                    #             request.app.state.WEBUI_NAME,
+                    #             webhook_url,
+                    #             f"{title} - {request.app.state.config.WEBUI_URL}/c/{metadata['chat_id']}\n\n{content}",
+                    #             {
+                    #                 "action": "chat",
+                    #                 "message": content,
+                    #                 "title": title,
+                    #                 "url": f"{request.app.state.config.WEBUI_URL}/c/{metadata['chat_id']}",
+                    #             },
+                    #         )
 
                     await background_tasks_handler()
 

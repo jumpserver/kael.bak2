@@ -285,7 +285,7 @@
 				currentChatPage.set(1);
 				await chats.set(await getChatList(localStorage.token, $currentChatPage));
 			} else if (type === 'chat:tags') {
-				tags.set(await getAllTags(localStorage.token));
+				tags.set(await getAllTags());
 			}
 		} else if (data?.session_id === $socket.id) {
 			if (type === 'execute:python') {
@@ -494,13 +494,13 @@
 		user.subscribe((value) => {
 			if (value) {
 				$socket?.off('chat-events', chatEventHandler);
-				$socket?.off('channel-events', channelEventHandler);
+				// $socket?.off('channel-events', channelEventHandler);
 
 				$socket?.on('chat-events', chatEventHandler);
-				$socket?.on('channel-events', channelEventHandler);
+				// $socket?.on('channel-events', channelEventHandler);
 			} else {
 				$socket?.off('chat-events', chatEventHandler);
-				$socket?.off('channel-events', channelEventHandler);
+				// $socket?.off('channel-events', channelEventHandler);
 			}
 		});
 
@@ -545,7 +545,7 @@
 
 				if (sessionUser) {
 					// Save Session User to Store
-					$socket.emit('user-join', { user: sessionUser });
+					// $socket.emit('user-join', { user: sessionUser });
 					await user.set(sessionUser);
 				} else {
 					await goto(`/core/auth/login/?next=/kael?redirect=${encodedUrl}`);

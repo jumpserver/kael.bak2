@@ -39,7 +39,7 @@
 			console.log(sessionUser);
 			toast.success($i18n.t(`You're now logged in.`));
 
-			$socket.emit('user-join', { user: sessionUser });
+			// $socket.emit('user-join', { user: sessionUser });
 			await user.set(sessionUser);
 			await config.set(await getBackendConfig());
 

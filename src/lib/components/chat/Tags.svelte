@@ -20,9 +20,10 @@
 	let tags = [];
 
 	const getTags = async () => {
-		return await getTagsById(localStorage.token, chatId).catch(async (error) => {
-			return [];
-		});
+		// return []
+		// return await getTagsById(localStorage.token, chatId).catch(async (error) => {
+		// 	return [];
+		// });
 	};
 
 	const addTag = async (tagName) => {
@@ -52,7 +53,7 @@
 			tags: tags
 		});
 
-		await _tags.set(await getAllTags(localStorage.token));
+		await _tags.set(await getAllTags());
 		dispatch('delete', {
 			name: tagName
 		});

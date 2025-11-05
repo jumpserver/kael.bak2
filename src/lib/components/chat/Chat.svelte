@@ -262,7 +262,7 @@
 					await chats.set(await getChatList(localStorage.token, $currentChatPage));
 				} else if (type === 'chat:tags') {
 					chat = await getChatById(localStorage.token, $chatId);
-					allTags.set(await getAllTags(localStorage.token));
+					allTags.set(await getAllTags());
 				} else if (type === 'source' || type === 'citation') {
 					if (data?.type === 'code_execution') {
 						// Code execution; update existing code execution by ID, or add new one.
@@ -772,9 +772,10 @@
 		});
 
 		if (chat) {
-			tags = await getTagsById(localStorage.token, $chatId).catch(async (error) => {
-				return [];
-			});
+			tags = []
+				// = await getTagsById(localStorage.token, $chatId).catch(async (error) => {
+				// return [];
+			// });
 
 			const chatContent = chat.chat;
 

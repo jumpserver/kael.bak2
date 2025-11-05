@@ -155,9 +155,9 @@ DEFAULT_CONFIG = {
 def get_config():
     return DEFAULT_CONFIG
     # with get_db() as db:
-        # Load the latest config from DB if present; otherwise use DEFAULT_CONFIG
-        # config_entry = db.query(Config).order_by(Config.id.desc()).first()
-        # return config_entry.data if config_entry else DEFAULT_CONFIG
+    # Load the latest config from DB if present; otherwise use DEFAULT_CONFIG
+    # config_entry = db.query(Config).order_by(Config.id.desc()).first()
+    # return config_entry.data if config_entry else DEFAULT_CONFIG
 
 
 CONFIG_DATA = get_config()
