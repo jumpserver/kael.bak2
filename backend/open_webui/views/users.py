@@ -177,14 +177,15 @@ async def get_user_settings_by_session_user(user=Depends(get_verified_user)):
 async def update_user_settings_by_session_user(
         form_data: UserSettings, user=Depends(get_verified_user)
 ):
-    user = Users.update_user_settings_by_id(user.id, form_data.model_dump())
-    if user:
-        return user.settings
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.USER_NOT_FOUND,
-        )
+    return form_data.model_dump()
+    # user = Users.update_user_settings_by_id(user.id, form_data.model_dump())
+    # if user:
+    #     return user.settings
+    # else:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail=ERROR_MESSAGES.USER_NOT_FOUND,
+    #     )
 
 
 ############################

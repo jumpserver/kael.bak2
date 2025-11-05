@@ -271,20 +271,20 @@ class UsersTable:
         except Exception:
             return None
 
-    def update_user_settings_by_id(self, id: str, updated: dict) -> Optional[UserModel]:
+    def update_user_settings_by_id(self, _id: str, updated: dict) -> Optional[UserModel]:
         try:
             with get_db() as db:
-                user_settings = db.query(User).filter_by(id=id).first().settings
+                user_settings = db.query(User).filter_by(id=_id).first().settings
 
                 if user_settings is None:
                     user_settings = {}
 
                 user_settings.update(updated)
 
-                db.query(User).filter_by(id=id).update({"settings": user_settings})
+                db.query(User).filter_by(id=_id).update({"settings": user_settings})
                 db.commit()
 
-                user = db.query(User).filter_by(id=id).first()
+                user = db.query(User).filter_by(id=_id).first()
                 return UserModel.model_validate(user)
         except Exception:
             return None

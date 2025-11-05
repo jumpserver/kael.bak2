@@ -266,7 +266,7 @@
 		</div>
 	{:else}
 		<a
-			class=" w-full flex justify-between rounded-lg px-[11px] py-[6px] {id === $chatId ||
+			class=" w-full flex justify-between rounded-lg px-[11px] py-[8px] {id === $chatId ||
 			confirmEdit
 				? 'bg-gray-200 dark:bg-gray-900'
 				: selected
