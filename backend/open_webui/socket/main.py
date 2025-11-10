@@ -199,77 +199,77 @@ async def connect(sid, environ, auth):
         await sio.emit("usage", {"models": get_models_in_use()})
 
 
-@sio.on("user-join")
-async def user_join(sid, data):
-    user = data["user"]
-    if not user:
-        return
-
-    user_id = user['id']
-    SESSION_POOL[sid] = user
-    if user_id in USER_POOL:
-        USER_POOL[user_id] = USER_POOL[user_id] + [sid]
-    else:
-        USER_POOL[user_id] = [sid]
-
-    # Join all the channels
-    channels = Channels.get_channels_by_user_id(user_id)
-    log.debug(f"{channels=}")
-    for channel in channels:
-        await sio.enter_room(sid, f"channel:{channel.id}")
-
-    # print(f"user {user.name}({user.id}) connected with session ID {sid}")
-
-    await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})
-    return {"id": user_id, "name": user['name']}
-
-
-@sio.on("join-channels")
-async def join_channel(sid, data):
-    from open_webui.models.users import Users
-
-    if data is None or "id" not in data:
-        return
-
-    user = Users.get_user_by_id(data["id"])
-    if not user:
-        return
-
-    # Join all the channels
-    channels = Channels.get_channels_by_user_id(user.id)
-    log.debug(f"{channels=}")
-    for channel in channels:
-        await sio.enter_room(sid, f"channel:{channel.id}")
+# @sio.on("user-join")
+# async def user_join(sid, data):
+#     user = data["user"]
+#     if not user:
+#         return
+#
+#     user_id = user['id']
+#     SESSION_POOL[sid] = user
+#     if user_id in USER_POOL:
+#         USER_POOL[user_id] = USER_POOL[user_id] + [sid]
+#     else:
+#         USER_POOL[user_id] = [sid]
+#
+#     # Join all the channels
+#     channels = Channels.get_channels_by_user_id(user_id)
+#     log.debug(f"{channels=}")
+#     for channel in channels:
+#         await sio.enter_room(sid, f"channel:{channel.id}")
+#
+#     # print(f"user {user.name}({user.id}) connected with session ID {sid}")
+#
+#     await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})
+#     return {"id": user_id, "name": user['name']}
 
 
-@sio.on("channel-events")
-async def channel_events(sid, data):
-    from open_webui.models.users import UserNameResponse
+# @sio.on("join-channels")
+# async def join_channel(sid, data):
+#     from open_webui.models.users import Users
+#
+#     if data is None or "id" not in data:
+#         return
+#
+#     user = Users.get_user_by_id(data["id"])
+#     if not user:
+#         return
+#
+#     # Join all the channels
+#     channels = Channels.get_channels_by_user_id(user.id)
+#     log.debug(f"{channels=}")
+#     for channel in channels:
+#         await sio.enter_room(sid, f"channel:{channel.id}")
 
-    room = f"channel:{data['channel_id']}"
-    participants = sio.manager.get_participants(
-        namespace="/",
-        room=room,
-    )
 
-    sids = [sid for sid, _ in participants]
-    if sid not in sids:
-        return
-
-    event_data = data["data"]
-    event_type = event_data["type"]
-
-    if event_type == "typing":
-        await sio.emit(
-            "channel-events",
-            {
-                "channel_id": data["channel_id"],
-                "message_id": data.get("message_id", None),
-                "data": event_data,
-                "user": UserNameResponse(**SESSION_POOL[sid]).model_dump(),
-            },
-            room=room,
-        )
+# @sio.on("channel-events")
+# async def channel_events(sid, data):
+#     from open_webui.models.users import UserNameResponse
+#
+#     room = f"channel:{data['channel_id']}"
+#     participants = sio.manager.get_participants(
+#         namespace="/",
+#         room=room,
+#     )
+#
+#     sids = [sid for sid, _ in participants]
+#     if sid not in sids:
+#         return
+#
+#     event_data = data["data"]
+#     event_type = event_data["type"]
+#
+#     if event_type == "typing":
+#         await sio.emit(
+#             "channel-events",
+#             {
+#                 "channel_id": data["channel_id"],
+#                 "message_id": data.get("message_id", None),
+#                 "data": event_data,
+#                 "user": UserNameResponse(**SESSION_POOL[sid]).model_dump(),
+#             },
+#             room=room,
+#         )
 
 
 @sio.on("user-list")

@@ -171,7 +171,7 @@
 
 	const initChatList = async () => {
 		// Reset pagination variables
-		// tags.set(await getAllTags(localStorage.token));
+		// tags.set(await getAllTags());
 		pinnedChats.set(await getPinnedChatList(localStorage.token));
 		tags.set([]);
 		initFolders();
@@ -229,7 +229,7 @@
 				await chats.set(await getChatListBySearchText(localStorage.token, search));
 
 				if ($chats.length === 0) {
-					// tags.set(await getAllTags(localStorage.token));
+					// tags.set(await getAllTags());
 					tags.set([]);
 				}
 			}, 1000);
@@ -452,7 +452,7 @@
 		});
 
 		if (res) {
-			$socket.emit('join-channels', { id: user?.id });
+			// $socket.emit('join-channels', { id: user?.id });
 			await initChannels();
 			showCreateChannel = false;
 		}

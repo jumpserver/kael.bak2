@@ -34,35 +34,35 @@ export const createNewTool = async (token: string, tool: object) => {
 
 export const getTools = async (token: string = '') => {
 	console.log('Neglect', token)
-	// return [];
-	let error = null;
-
-	const res = await apiFetch(`${WEBUI_API_BASE_URL}/tools/`, {
-		method: 'GET',
-		headers: {
-			Accept: 'application/json',
-			'Content-Type': 'application/json',
-			authorization: `Bearer ${token}`
-		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.then((json) => {
-			return json;
-		})
-		.catch((err) => {
-			error = err.detail;
-			console.log(err);
-			return null;
-		});
-
-	if (error) {
-		throw error;
-	}
-
-	return res;
+	return [];
+	// let error = null;
+	//
+	// const res = await apiFetch(`${WEBUI_API_BASE_URL}/tools/`, {
+	// 	method: 'GET',
+	// 	headers: {
+	// 		Accept: 'application/json',
+	// 		'Content-Type': 'application/json',
+	// 		authorization: `Bearer ${token}`
+	// 	}
+	// })
+	// 	.then(async (res) => {
+	// 		if (!res.ok) throw await res.json();
+	// 		return res.json();
+	// 	})
+	// 	.then((json) => {
+	// 		return json;
+	// 	})
+	// 	.catch((err) => {
+	// 		error = err.detail;
+	// 		console.log(err);
+	// 		return null;
+	// 	});
+	//
+	// if (error) {
+	// 	throw error;
+	// }
+	//
+	// return res;
 };
 
 export const getToolList = async (token: string = '') => {

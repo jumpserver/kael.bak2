@@ -57,7 +57,7 @@
 
 	const initTags = async () => {
 		loading = true;
-		await tags.set(await getAllTags(localStorage.token));
+		await tags.set(await getAllTags());
 		loading = false;
 	};
 
@@ -105,7 +105,7 @@
 		</div>
 
 		<input
-			class="w-full rounded-r-xl py-1.5 pl-2.5 text-sm bg-transparent dark:text-gray-300 
+			class="w-full rounded-r-xl py-1.5 pl-2.5 text-sm bg-transparent dark:text-gray-300
 			outline-hidden rounded-xs mr-2 ml-1"
 			placeholder={placeholder ? placeholder : $i18n.t('Search')}
 			bind:value

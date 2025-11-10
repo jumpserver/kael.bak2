@@ -116,7 +116,7 @@
 		});
 
 		if (res) {
-			tags.set(await getAllTags(localStorage.token));
+			tags.set(await getAllTags());
 			if ($chatId === id) {
 				await goto('/kael/');
 
