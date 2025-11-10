@@ -17,7 +17,7 @@ from open_webui.env import (
     ENABLE_WEBSOCKET_SUPPORT,
     WEBSOCKET_REDIS_LOCK_TIMEOUT,
 )
-from jms import check_user, chat_manager, JMSSession
+from open_webui.jms import check_user, chat_manager, JMSSession
 
 # Import BASE_PATH from main module
 try:

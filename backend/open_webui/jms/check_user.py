@@ -3,9 +3,9 @@ from http.cookies import SimpleCookie
 from typing import Mapping
 
 from fastapi import Request
-from jms.wisp.protobuf import service_pb2
-from jms.wisp.exceptions import WispError
-from jms.wisp.protobuf.common_pb2 import User
+from open_webui.jms.wisp.protobuf import service_pb2
+from open_webui.jms.wisp.exceptions import WispError
+from open_webui.jms.wisp.protobuf.common_pb2 import User
 from open_webui.env import SRC_LOG_LEVELS
 
 from .base import BaseWisp

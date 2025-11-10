@@ -3,11 +3,10 @@ from typing import Optional
 from datetime import datetime
 
 from open_webui.env import SRC_LOG_LEVELS
-
-from .wisp.protobuf import service_pb2
-from .wisp.exceptions import WispError
-from .base import BaseWisp
-from .schemas import CommandRecord
+from open_webui.jms.wisp.protobuf import service_pb2
+from open_webui.jms.wisp.exceptions import WispError
+from open_webui.jms.base import BaseWisp
+from open_webui.jms.schemas import CommandRecord
 
 logger = logging.getLogger(__name__)
 logger.setLevel(SRC_LOG_LEVELS["WISP"])

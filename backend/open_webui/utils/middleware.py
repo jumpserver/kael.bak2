@@ -17,9 +17,8 @@ from concurrent.futures import ThreadPoolExecutor
 from fastapi import Request
 from starlette.responses import StreamingResponse
 
-from jms import CommandRecord, chat_manager, ReplayHandler, CommandHandler
+from open_webui.jms import CommandRecord, chat_manager, ReplayHandler, CommandHandler
 from open_webui.models.chats import Chats
-from open_webui.models.users import Users
 from open_webui.socket.main import (
     get_event_call,
     get_event_emitter,

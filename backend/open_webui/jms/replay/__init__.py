@@ -4,10 +4,9 @@ import logging
 from pathlib import Path
 from datetime import datetime
 
-from jms.wisp import PROJECT_DIR
-from jms.wisp.protobuf import service_pb2
-from jms.wisp.exceptions import WispError
-from jms.wisp.protobuf.common_pb2 import Session
+from open_webui.jms.wisp import PROJECT_DIR
+from open_webui.jms.wisp.protobuf import service_pb2
+from open_webui.jms.wisp.exceptions import WispError
 from open_webui.env import SRC_LOG_LEVELS
 from .asciinema import AsciinemaWriter
 from ..base import BaseWisp

@@ -1,5 +1,5 @@
-from jms.wisp import grpc_channel
-from jms.wisp.protobuf import service_pb2_grpc
+from open_webui.jms.wisp import grpc_channel
+from open_webui.jms.wisp.protobuf import service_pb2_grpc
 
 
 class BaseWisp:

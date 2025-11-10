@@ -5,10 +5,10 @@ import asyncio
 import threading
 
 from open_webui.env import SRC_LOG_LEVELS
-from jms.wisp import PROJECT_DIR
-from jms.wisp.protobuf import service_pb2
-from jms.wisp.exceptions import WispError
-from jms.wisp.protobuf.common_pb2 import KillSession
+from open_webui.jms.wisp import PROJECT_DIR
+from open_webui.jms.wisp.protobuf import service_pb2
+from open_webui.jms.wisp.exceptions import WispError
+from open_webui.jms.wisp.protobuf.common_pb2 import KillSession
 from .base import BaseWisp
 from .session import JMSSession
 
@@ -33,7 +33,7 @@ class PollJMSEvent(BaseWisp):
             logger.info('Scan remain replay success')
 
     def wait_for_kill_session_message(self):
-        from jms import chat_manager
+        from open_webui.jms import chat_manager
         q = queue.Queue(maxsize=1000)
         for resp in self.stub.DispatchTask(iter(q.get, None)):
             task = resp.task

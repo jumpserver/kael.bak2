@@ -87,9 +87,6 @@ classifiers = [
     "Topic :: Multimedia",
 ]
 
-[project.scripts]
-open-webui = "open_webui:app"
-
 [tool.rye]
 managed = true
 dev-dependencies = []

@@ -2,11 +2,11 @@ import asyncio
 import logging
 from datetime import datetime
 
-from jms.wisp.protobuf import service_pb2
-from jms.wisp.exceptions import WispError
-from jms.wisp.protobuf.common_pb2 import Session, User
+from open_webui.jms.wisp.protobuf import service_pb2
+from open_webui.jms.wisp.exceptions import WispError
+from open_webui.jms.wisp.protobuf.common_pb2 import Session, User
+from open_webui.jms import CommandHandler, ReplayHandler
 from open_webui.env import SRC_LOG_LEVELS
-from jms import CommandHandler, ReplayHandler
 from ..account import AccountChatHandler
 from ..base import BaseWisp
 

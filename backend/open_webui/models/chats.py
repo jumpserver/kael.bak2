@@ -9,8 +9,8 @@ from sqlalchemy import BigInteger, Boolean, Column, String, Text, JSON, text
 from open_webui.internal.db import Base, get_db
 from open_webui.models.tags import TagModel, Tags
 from open_webui.env import SRC_LOG_LEVELS
-from jms import SessionHandler, chat_manager
-from jms.wisp.protobuf.common_pb2 import User
+from open_webui.jms import SessionHandler, chat_manager
+from open_webui.jms.wisp.protobuf.common_pb2 import User
 
 ####################
 # Chat DB Schema

@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Any, Dict, List, Optional
 
-from jms.wisp.exceptions import WispError
+from open_webui.jms.wisp.exceptions import WispError
 from open_webui.env import SRC_LOG_LEVELS
 
 from .base import BaseWisp

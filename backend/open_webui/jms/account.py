@@ -1,9 +1,9 @@
 import logging
 from typing import Any
 
-from jms.wisp.exceptions import WispError
+from open_webui.jms.wisp.exceptions import WispError
 from open_webui.env import SRC_LOG_LEVELS
-from jms.wisp.protobuf import service_pb2
+from open_webui.jms.wisp.protobuf import service_pb2
 
 from .base import BaseWisp
 
